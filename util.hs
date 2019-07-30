@@ -1,7 +1,8 @@
 module Eutherion.Utilities (
 
        formatAsNumber,
-       padLeft
+       padLeft,
+       conditionalElem
 
        ) where
 
@@ -34,3 +35,9 @@ formatAsNumber lookup n
 -- Pads a list on the left with an element up to a maximum total length.
 padLeft :: a -> Int -> [a] -> [a]
 padLeft c n s = replicate (n - length s) c ++ s
+
+-- Returns a list containing one given value or an empty list depending on a condition.
+conditionalElem :: Bool -> a -> [a]
+conditionalElem b c
+    | b         = [c]
+    | otherwise = []

@@ -8,7 +8,9 @@ module Eutherion.Combinatorics (
        ctSize,
        ctIdentityElement,
        ctOperationTable,
-       ctInverseTable
+       ctInverseTable,
+       buildCayleyTable,
+       buildCayleyTableOptimistic
 
        ) where
 
@@ -124,3 +126,89 @@ showCayleyTable idElemString f (CayleyTable n identity multTable inverseTable) =
 
 instance Show CayleyTable where
     show = showCayleyTable "1" (formatAsNumber ['a'..'z'] . toInteger)
+
+-- Builds a Cayley table of a finite group, if it is indeed a group. Yields a list of errors otherwise.
+buildCayleyTable :: Int -> Int -> Array Int (Array Int Int) -> Array Int Int -> Either [String] CayleyTable
+buildCayleyTable size identityElement operationTable inverseTable =
+    if errors2 /= [] then Left errors2 else Right (CayleyTable size identityElement operationTable inverseTable)
+    where
+        errors1 = case dimensionErrors of
+            [] -> closedErrors
+            _  -> dimensionErrors
+
+        errors2 = case errors1 of
+            [] -> concat [
+                      associativityErrors,
+                      identityErrors,
+                      inverseErrors]
+            _  -> errors1
+
+        range (min, max) = [min..max]
+
+        analyzeBounds (min, max) errorPrefix =
+            conditionalElem (min /= 0 || max + 1 /= size)
+                            (errorPrefix ++ " has bounds " ++ show min ++ ".." ++ show max ++ ", but expected 0.." ++ show (size - 1))
+
+        dimensionErrors =
+            concat [
+                conditionalElem (size <= 0) "Table has zero or negative size",
+                analyzeBounds (bounds operationTable) "Operation table",
+                concat [analyzeBounds (bounds (operationTable ! i)) ("Operation table [" ++ show i ++ "]") | i <- range $ bounds operationTable],
+                analyzeBounds (bounds inverseTable) "Inverse table"]
+
+        analyzeClosed x errorPrefix =
+            conditionalElem (x < 0 || size <= x)
+                            (errorPrefix ++ " is not within the finite group, bounds 0.." ++ show (size - 1))
+
+        analyzeElementClosed x y =
+            analyzeClosed opResult (show x ++ " . " ++ show y ++ " = " ++ show opResult)
+            where
+                opResult = operationTable ! x ! y
+
+        analyzeInverseClosed x =
+            analyzeClosed inverseResult ("~" ++ show x ++ " = " ++ show inverseResult)
+            where
+                inverseResult = inverseTable ! x
+
+        closedErrors =
+            concat [
+                analyzeClosed identityElement ("Identity element " ++ show identityElement),
+                concat [analyzeElementClosed i j | i <- [0..size - 1], j <- [0..size - 1]],
+                concat [analyzeInverseClosed i | i <- [0..size - 1]]]
+
+        associativityError i j k =
+            conditionalElem (leftResult /= rightResult)
+                            ("(" ++ show i ++ " . " ++ show j ++ ") . " ++ show k ++ " = " ++ show leftResult ++ " <> " ++
+                             show rightResult ++ " = " ++ show i ++ " . (" ++ show j ++ " . " ++ show k ++ ")")
+            where
+                leftResult  = operationTable ! (operationTable ! i ! j) ! k
+                rightResult = operationTable ! i ! (operationTable ! j ! k)
+
+        associativityErrors =
+            concat [associativityError i j k | i <- [0..size - 1], j <- [0..size - 1], k <- [0..size - 1]]
+
+        identityError i =
+            conditionalElem (i /= opResult)
+                            ("I . " ++ show i ++ " = " ++ show opResult ++ " <> " ++ show i)
+            where
+                opResult = operationTable ! identityElement ! i
+
+        identityErrors =
+            concat [identityError i | i <- [0..size - 1]]
+
+        inverseError i =
+            conditionalElem (identityElement /= invResult)
+                            ("~" ++ show i ++ " . " ++ show i ++ " = " ++ show invResult ++ " <> I")
+            where
+                invResult = operationTable ! (inverseTable ! i) ! i
+
+        inverseErrors =
+            concat [inverseError i | i <- [0..size - 1]]
+
+-- Like buildCayleyTable, builds a Cayley table of a finite group. Throws if it's not a group.
+buildCayleyTableOptimistic :: Int -> Int -> Array Int (Array Int Int) -> Array Int Int -> CayleyTable
+buildCayleyTableOptimistic n identity multTable inverseTable =
+    let maybeTable = buildCayleyTable n identity multTable inverseTable
+    in  case maybeTable of
+        Left errors  -> error $ intercalate "\n" ("Not a finite group:" : errors)
+        Right cTable -> cTable
