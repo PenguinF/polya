@@ -2,9 +2,17 @@ module Eutherion.Combinatorics (
 
        binom,
        multinom,
-       choose
+       choose,
+
+       CayleyTable,
+       ctSize,
+       ctIdentityElement,
+       ctOperationTable,
+       ctInverseTable
 
        ) where
+
+import Data.Array
 
 -- Computes the binomial coefficient 'n choose k'.
 binom :: Integer -> Integer -> Integer
@@ -50,3 +58,18 @@ choose items n =
                 (0, 0) -> [[]]  -- Sum matches total exactly, accept, so yield an empty (valid) solution.
                 (_, 0) -> []    -- Sum does not match total, reject, so yield nothing at all.
                 (n, k) -> [i : xs | i <- [0..n], xs <- genDistinctSums (n - i) (k - 1)]
+
+-- Represents a finite group, with these identities:
+-- (n == ctSize, t == ctOperationTable, v == ctInverseTable, i == ctIdentityElement)
+--
+-- 0 <= t[x, y] < n  for all 0 <= x,y < n  (binary algebra)
+-- t[t[x, y], z] = t[x, t[y, z]]           (associativity)
+-- t[i, y] == y                            (monoid I)
+-- t[x, i] == x                            (monoid II)
+-- t[x, v[x]] = i = t[v[x], x]             (inverse law)
+data CayleyTable = CayleyTable {
+        ctSize :: Int,
+        ctIdentityElement :: Int,
+        ctOperationTable :: (Array Int (Array Int Int)),
+        ctInverseTable :: (Array Int Int)
+    }
