@@ -70,3 +70,37 @@ class Eq a => CommutativeRing a where
                 | otherwise               = r_gcd' x y
                 where
                     difference = r_add x (r_min y)
+
+instance CommutativeRing Integer where
+    r_add        = (+)
+    r_min        = \x -> -x
+    r_mult       = (*)
+    r_zero       = 0
+    r_one        = 1
+    r_ones       = id
+    r_exp        = (^)
+    r_isNegative = (< 0)
+    r_abs        = abs
+
+instance CommutativeRing Int where
+    r_add        = (+)
+    r_min        = \x -> -x
+    r_mult       = (*)
+    r_zero       = 0
+    r_one        = 1
+    r_ones       = fromInteger
+    r_exp        = (^)
+    r_isNegative = (< 0)
+    r_abs        = abs
+
+instance CommutativeRing Bool where
+    r_add False False = False
+    r_add True  False = True
+    r_add False True  = True
+    r_add True  True  = False
+    r_min             = id
+    r_mult            = (&&)
+    r_zero            = False
+    r_one             = True
+    r_ones n          = n /= 0
+    r_abs             = id
