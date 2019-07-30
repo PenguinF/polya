@@ -18,8 +18,11 @@ Prelude> :cd C:/Dev/polya
 Prelude> :add util.hs
 [1 of 1] Compiling Eutherion.Utilities ( util.hs, interpreted )
 Ok, one module loaded.
-*Eutherion.Utilities> :add main.hs
-[2 of 2] Compiling Main             ( main.hs, interpreted )
+*Eutherion.Utilities> :add combinatorics.hs
+[2 of 2] Compiling Eutherion.Combinatorics ( combinatorics.hs, interpreted )
 Ok, two modules loaded.
+*Eutherion.Combinatorics> :add main.hs
+[3 of 3] Compiling Main             ( main.hs, interpreted )
+Ok, three modules loaded.
 *Main>
 ```
