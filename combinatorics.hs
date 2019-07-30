@@ -13,6 +13,9 @@ module Eutherion.Combinatorics (
        ) where
 
 import Data.Array
+import Data.List
+
+import Eutherion.Utilities
 
 -- Computes the binomial coefficient 'n choose k'.
 binom :: Integer -> Integer -> Integer
@@ -73,3 +76,51 @@ data CayleyTable = CayleyTable {
         ctOperationTable :: (Array Int (Array Int Int)),
         ctInverseTable :: (Array Int Int)
     }
+
+-- Shows a Cayley table given a function which yields (short) names for each index in the table.
+showCayleyTable :: String -> (Int -> String) -> CayleyTable -> String
+showCayleyTable idElemString f (CayleyTable n identity multTable inverseTable) =
+    intercalate "\n" $ map leftMargin $ concat
+    [
+        [header],
+        [headerBorder],
+        [tableEntryLine i | i <- [0..n - 1]]
+    ]
+    where
+        displayElem e
+            | e == identity = idElemString
+            | otherwise     = f e
+
+        maxElemLength = maximum [length $ displayElem i | i <- [0..n - 1]]
+
+        leftMargin line = "  " ++ line
+
+        rAlign          = padLeft ' '
+        rAlignElemWidth = rAlign maxElemLength
+        rAlignElem      = rAlignElemWidth . displayElem
+
+        -- header/headerBorder/tableEntryLine i should have parallel implementations.
+        header =
+            replicate maxElemLength ' '
+            ++ " |"
+            ++ concat [' ' : rAlignElem i | i <- [0..n - 1]]
+            ++ " | "
+            ++ rAlignElemWidth "~"
+
+        headerBorder =
+            replicate maxElemLength '-'
+            ++ "-+"
+            ++ concat ['-' : replicate maxElemLength '-' | i <- [0..n - 1]]
+            ++ "-+-"
+            ++ replicate maxElemLength '-'
+            ++ "-"
+
+        tableEntryLine i =
+            rAlignElem i
+            ++ " |"
+            ++ concat [' ' : (rAlignElem (multTable ! i ! j)) | j <- [0..n - 1]]
+            ++ " | "
+            ++ rAlignElem (inverseTable ! i)
+
+instance Show CayleyTable where
+    show = showCayleyTable "1" (formatAsNumber ['a'..'z'] . toInteger)

@@ -1,6 +1,7 @@
 module Eutherion.Utilities (
 
-       formatAsNumber
+       formatAsNumber,
+       padLeft
 
        ) where
 
@@ -29,3 +30,7 @@ formatAsNumber lookup n
             in  if (d == 0)
                     then lastDigit
                     else fmtPositiveNumber lookup d ++ lastDigit
+
+-- Pads a list on the left with an element up to a maximum total length.
+padLeft :: a -> Int -> [a] -> [a]
+padLeft c n s = replicate (n - length s) c ++ s
