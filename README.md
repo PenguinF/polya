@@ -24,11 +24,14 @@ Ok, two modules loaded.
 *Eutherion.Combinatorics> :add ring.hs
 [3 of 3] Compiling Eutherion.Polynomial ( ring.hs, interpreted )
 Ok, three modules loaded.
-*Eutherion.Polynomial> :add polya.hs
-[4 of 4] Compiling Eutherion.Polya  ( polya.hs, interpreted )
+*Eutherion.CommutativeRing> :add polynomial.hs
+[4 of 4] Compiling Eutherion.Polynomial ( polynomial.hs, interpreted )
 Ok, four modules loaded.
-*Eutherion.Polya> :add main.hs
-[5 of 5] Compiling Main             ( main.hs, interpreted )
+*Eutherion.Polynomial> :add polya.hs
+[5 of 5] Compiling Eutherion.Polya  ( polya.hs, interpreted )
 Ok, five modules loaded.
+*Eutherion.Polya> :add main.hs
+[6 of 6] Compiling Main             ( main.hs, interpreted )
+Ok, six modules loaded.
 *Main>
 ```

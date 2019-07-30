@@ -4,6 +4,8 @@ import Data.List
 
 import Eutherion.Utilities
 import Eutherion.Combinatorics
+import Eutherion.CommutativeRing
+import Eutherion.Polynomial
 import Eutherion.Polya
 
 

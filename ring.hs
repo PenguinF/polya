@@ -1,4 +1,4 @@
-module Eutherion.Polynomial (
+module Eutherion.CommutativeRing (
 
        CommutativeRing,
        r_add,
