@@ -1,0 +1,7 @@
+* text=auto
+
+.gitignore     text merge=union
+.gitattributes text merge=union
+
+*.hs     text
+*.md     text
