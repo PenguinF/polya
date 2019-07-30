@@ -2,6 +2,7 @@ module Eutherion.Utilities (
 
        formatAsNumber,
        padLeft,
+       padRight,
        conditionalElem,
        listToSimpleArray
 
@@ -38,6 +39,12 @@ formatAsNumber lookup n
 -- Pads a list on the left with an element up to a maximum total length.
 padLeft :: a -> Int -> [a] -> [a]
 padLeft c n s = replicate (n - length s) c ++ s
+
+-- Pads a list on the right with an element up to a maximum total length.
+padRight :: a -> Int -> [a] -> [a]
+padRight _ 0 s     = s
+padRight c n []    = replicate n c
+padRight c n (x:s) = x : padRight c (n - 1) s
 
 -- Returns a list containing one given value or an empty list depending on a condition.
 conditionalElem :: Bool -> a -> [a]
