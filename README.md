@@ -21,8 +21,11 @@ Ok, one module loaded.
 *Eutherion.Utilities> :add combinatorics.hs
 [2 of 2] Compiling Eutherion.Combinatorics ( combinatorics.hs, interpreted )
 Ok, two modules loaded.
-*Eutherion.Combinatorics> :add main.hs
-[3 of 3] Compiling Main             ( main.hs, interpreted )
+*Eutherion.Combinatorics> :add polya.hs
+[3 of 3] Compiling Eutherion.Polya  ( polya.hs, interpreted )
 Ok, three modules loaded.
+*Eutherion.Polya> :add main.hs
+[4 of 4] Compiling Main             ( main.hs, interpreted )
+Ok, four modules loaded.
 *Main>
 ```
