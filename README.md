@@ -10,5 +10,16 @@ To play around with the code:
 
 - Install the [Haskell platform](https://www.haskell.org/platform/)
 - Clone this repository, for example to `C:\Dev\polya`
-- Start WinGHCi
-- On the command line, type: `:load "C:/Dev/polya/main.hs"`
+- Start (Win)GHCi
+
+To bring all functions into scope, use these commands:
+```
+Prelude> :cd C:/Dev/polya
+Prelude> :add util.hs
+[1 of 1] Compiling Eutherion.Utilities ( util.hs, interpreted )
+Ok, one module loaded.
+*Eutherion.Utilities> :add main.hs
+[2 of 2] Compiling Main             ( main.hs, interpreted )
+Ok, two modules loaded.
+*Main>
+```
