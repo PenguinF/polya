@@ -6,7 +6,19 @@ import Eutherion.Utilities
 import Eutherion.Combinatorics
 import Eutherion.Polya
 
+
 -- Example: graphs on 1 or more points.
+
+-- Usage:
+-- -- Get the number of generated permutation functions which map an edge to another, for graphs with 4 vertices:
+-- > length $ enumPermuteGraphEdgeMappings $ undirectedGraph 0 3
+-- 24
+-- -- Now find out where the edge between vertices 0 and 1 ends up when the third (index 2) permutation function is applied to it:
+-- > ((enumPermuteGraphEdgeMappings (undirectedGraph 0 3)) !! 2) (GraphEdge (GraphVertex 0) (GraphVertex 1))
+-- GraphEdge (GraphVertex 1) (GraphVertex 2)
+-- -- Show the Cayley table of the Pólya group for graphs with 4 vertices:
+-- > cayleyTable $ graphPolyaGroup 4
+
 data UndirectedGraph a = UndirectedGraph a a deriving (Show, Eq)
 
 undirectedGraph :: Ord a => a -> a -> UndirectedGraph a
@@ -26,7 +38,7 @@ enumUndirectedNonReflexiveGraphEdges :: (Enum a, Eq a) => UndirectedGraph a -> [
 enumUndirectedNonReflexiveGraphEdges (UndirectedGraph vmin vmax) =
     [GraphEdge (GraphVertex v) (GraphVertex w) | v <- [vmin..vmax], w <- [v..vmax], v /= w]
 
-enumPermuteGraphEdgeMappings :: (Enum a, Ord a, Enum b) => UndirectedGraph a -> [GraphEdge b -> GraphEdge a]
+enumPermuteGraphEdgeMappings :: (Enum a, Ord a) => UndirectedGraph a -> [GraphEdge a -> GraphEdge a]
 enumPermuteGraphEdgeMappings (UndirectedGraph vmin vmax) =
     [permuteEdge $ permuteVertex vertexPermutation | vertexPermutation <- permutations $ enumGraphVertices (UndirectedGraph vmin vmax)]
     where
@@ -38,8 +50,7 @@ enumPermuteGraphEdgeMappings (UndirectedGraph vmin vmax) =
             case (permuteVertex v, permuteVertex w) of
                 (v', w') | v' <= w'  -> GraphEdge v' w'
                          | otherwise -> GraphEdge w' v'
--- Usage:
--- cayleyTable $ graphPolyaGroup 4
+
 graphPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (GraphEdge a)
 graphPolyaGroup n =
     makePolyaGroup (enumUndirectedNonReflexiveGraphEdges ug) (enumPermuteGraphEdgeMappings ug)
