@@ -2,9 +2,12 @@ module Eutherion.Utilities (
 
        formatAsNumber,
        padLeft,
-       conditionalElem
+       conditionalElem,
+       listToSimpleArray
 
        ) where
+
+import Data.Array
 
 -- Formats an integer value using a custom digit character lookup.
 -- A dash ('-') is used for a minus sign.
@@ -41,3 +44,10 @@ conditionalElem :: Bool -> a -> [a]
 conditionalElem b c
     | b         = [c]
     | otherwise = []
+
+-- Converts a list to a one-dimensional array with lower bound 0.
+listToSimpleArray :: [a] -> Array Int a
+listToSimpleArray xs =
+    let n      = length xs
+        zipped = zip [0..] xs
+    in  array (0, n - 1) zipped
