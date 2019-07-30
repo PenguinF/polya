@@ -1,6 +1,8 @@
 module Eutherion.Polya (
 
-       PolyaGroup
+       PolyaGroup,
+       makePolyaGroup,
+       cayleyTable
 
        ) where
 
@@ -12,6 +14,9 @@ import Eutherion.Combinatorics
 
 -- Encapsulates a list of elements, and a list of symmetry operations acting on those elements.
 data PolyaGroup a = PolyaGroup [a] [a -> a]
+
+makePolyaGroup :: [a] -> [a -> a] -> PolyaGroup a
+makePolyaGroup slots fns = PolyaGroup slots fns
 
 -- Builds a Cayley table of a symmetry group, if it is indeed a group. Errors otherwise.
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
