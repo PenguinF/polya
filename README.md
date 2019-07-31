@@ -22,7 +22,7 @@ Ok, one module loaded.
 [2 of 2] Compiling Eutherion.Combinatorics ( combinatorics.hs, interpreted )
 Ok, two modules loaded.
 *Eutherion.Combinatorics> :add ring.hs
-[3 of 3] Compiling Eutherion.Polynomial ( ring.hs, interpreted )
+[3 of 3] Compiling Eutherion.CommutativeRing ( ring.hs, interpreted )
 Ok, three modules loaded.
 *Eutherion.CommutativeRing> :add polynomial.hs
 [4 of 4] Compiling Eutherion.Polynomial ( polynomial.hs, interpreted )
