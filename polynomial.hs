@@ -8,7 +8,11 @@ module Eutherion.Polynomial (
        addPoly,
        multPoly,
        expPoly,
-       divPoly
+       divPoly,
+
+       ShowablePolynomialVariable,
+       showPoly,
+       showPolynomial
 
        ) where
 
