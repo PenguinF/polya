@@ -186,26 +186,26 @@ parseExpr tokens =
                 eatExponents e remainder =
                     case remainder of
                         -- Lookahead if TkExpOp is followed by a number.
-                        TkExpOp:TkNumber n:ts -> eatExponents (expPoly e n) ts
+                        TkExpOp:TkNumber n:ts -> eatExponents (r_exp e n) ts
                         TkExpOp:ts            -> parseError "Expected non-negative number after '^'"
-                        TkExponent n:ts       -> eatExponents (expPoly e n) ts
+                        TkExponent n:ts       -> eatExponents (r_exp e n) ts
                         _                     -> (e, remainder)
 
         parseUnaryPlusMinus tokens =
             case tokens of
                 TkPlus:ts  -> parseUnaryPlusMinus ts
-                TkMinus:ts -> let (e, remainder) = parseUnaryPlusMinus ts in (multPoly [makeConst (-1), e], remainder)
+                TkMinus:ts -> let (e, remainder) = parseUnaryPlusMinus ts in (r_min e, remainder)
                 _          -> parseOperandExponent tokens
 
         parseProduct tokens =
             let (e1, remainder) = parseUnaryPlusMinus tokens
             in  case remainder of
-                    TkMultiply:ts -> let (e2, remainder2) = parseProduct ts in (multPoly [e1, e2], remainder2)
+                    TkMultiply:ts -> let (e2, remainder2) = parseProduct ts in (r_mult e1 e2, remainder2)
                     -- These 3 cases allow for a slight ambiguity regarding the difference between binary and unary +/-.
                     -- The interpretation of the resulting syntax trees is the same, so can safely ignore.
-                    TkLBracket:_  -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
-                    TkNumber _:_  -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
-                    TkVar _:_     -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
+                    TkLBracket:_  -> let (e2, remainder2) = parseProduct remainder in (r_mult e1 e2, remainder2)
+                    TkNumber _:_  -> let (e2, remainder2) = parseProduct remainder in (r_mult e1 e2, remainder2)
+                    TkVar _:_     -> let (e2, remainder2) = parseProduct remainder in (r_mult e1 e2, remainder2)
                     _             -> (e1, remainder)
 
         parseSum tokens =
@@ -218,7 +218,7 @@ parseExpr tokens =
         -- Parse this left associatively, because of minus operands.
         parseSum' e1 isPositive tokens =
             let (e2, remainder) = parseProduct tokens
-                e               = addPoly [e1, if isPositive then e2 else multPoly [makeConst (-1), e2]]
+                e               = r_add e1 (if isPositive then e2 else r_min e2)
             in  case remainder of
                     TkPlus:ts  -> parseSum' e True ts
                     TkMinus:ts -> parseSum' e False ts
