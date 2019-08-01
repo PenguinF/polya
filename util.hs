@@ -5,6 +5,7 @@ module Eutherion.Utilities (
        thd3,
        formatAsNumber,
        exponentCharacterLookup,
+       expToNumber,
        padLeft,
        padRight,
        conditionalElem,
@@ -53,6 +54,15 @@ formatAsNumber lookup n
 -- For showing exponents. See also formatAsNumber.
 exponentCharacterLookup :: String
 exponentCharacterLookup = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+
+-- Converts a superscript (exponent) digit character to an integer value.
+expToNumber :: Num a => Char -> (Bool, a)
+expToNumber c = etnHelper 0 exponentCharacterLookup c
+    where
+        etnHelper n [] c = (False, error "Not an exponent character.")
+        etnHelper n (x:xs) c
+            | c == x    = (True, n)
+            | otherwise = etnHelper (n + 1) xs c
 
 -- Pads a list on the left with an element up to a maximum total length.
 padLeft :: a -> Int -> [a] -> [a]

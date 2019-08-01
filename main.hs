@@ -107,3 +107,51 @@ enumBoardSymmetryOperations (SquareBoard n)
 sqBoardPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (SquareBoardCoordinate a)
 sqBoardPolyaGroup n =
     makePolyaGroup [SquareBoardCoordinate x y | x <- [0..n - 1], y <- [0..n - 1]] (enumBoardSymmetryOperations (squareBoard n))
+
+
+
+
+
+-- Tokenization for parsing Polynomial Integer Char expressions.
+-- Division not supported, just use divPoly for that.
+data ExprToken = TkLBracket
+               | TkRBracket
+               | TkPlus
+               | TkMinus
+               | TkMultiply
+               | TkExpOp
+               | TkNumber Integer
+               | TkExponent Integer
+               | TkVar Char
+               deriving (Show)
+
+-- Tokenizes an input string for building expressions.
+lexExpr :: String -> [ExprToken]
+lexExpr x =
+    case x of
+        []    -> []
+        ' ':s -> lexExpr s
+        '(':s -> TkLBracket : lexExpr s
+        ')':s -> TkRBracket : lexExpr s
+        '+':s -> TkPlus     : lexExpr s
+        '-':s -> TkMinus    : lexExpr s
+        '*':s -> TkMultiply : lexExpr s
+        '.':s -> TkMultiply : lexExpr s
+        '∙':s -> TkMultiply : lexExpr s
+        '^':s -> TkExpOp    : lexExpr s
+        c:s | c >= '0' && c <= '9' -> buildNumber (ord c) s
+            | fst (expToNumber c)  -> buildExponent (snd $ expToNumber c) s
+            | otherwise            -> TkVar c : lexExpr s
+    where
+        -- Converts a digit character to an integer value.
+        ord c = toInteger ((fromEnum c) - (fromEnum '0'))
+
+        buildNumber n [] = [TkNumber n]
+        buildNumber n (c:s)
+            | c >= '0' && c <= '9' = buildNumber (10 * n + (ord c)) s
+            | otherwise            = TkNumber n : lexExpr (c:s)
+
+        buildExponent n [] = [TkExponent n]
+        buildExponent n (c:s)
+            | fst (expToNumber c) = buildExponent (10 * n + (snd $ expToNumber c)) s
+            | otherwise           = TkExponent n : lexExpr (c:s)
