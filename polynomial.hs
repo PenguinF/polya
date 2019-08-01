@@ -1,7 +1,14 @@
 module Eutherion.Polynomial (
 
        Polynomial,
-       VarExpression
+       VarExpression,
+
+       makeConst,
+       makeVar,
+       addPoly,
+       multPoly,
+       expPoly,
+       divPoly
 
        ) where
 
@@ -41,6 +48,32 @@ data VarExpression r v = Var v
                        | Mult r [VarExpression r v]
                        | Exp (VarExpression r v) Integer
                        deriving Eq
+
+
+-- Constructor functions
+
+makeConst :: CommutativeRing r => r -> Polynomial r v
+makeConst c = error "Not yet implemented."
+
+makeVar :: CommutativeRing r => v -> Polynomial r v
+makeVar x = error "Not yet implemented."
+
+-- Adds a list of polynomials to form a new polynomial.
+addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
+addPoly ps = error "Not yet implemented."
+
+-- Multiplies a list of polynomials to form a new polynomial.
+multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
+multPoly ps = error "Not yet implemented."
+
+-- Raises a polynomial to a power.
+expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
+expPoly p n = error "Not yet implemented."
+
+divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
+divPoly p d = error "Not yet implemented."
+
+
 
 
 
