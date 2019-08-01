@@ -56,6 +56,22 @@ data VarExpression r v = Var v
 
 -- Constructor functions
 
+-- Examples:
+-- > divPoly ((makeConst :: Integer -> Polynomial Integer Char) 3) 2
+-- 3 / 2
+-- > multPoly [divPoly ((makeConst :: Integer -> Polynomial Integer Char) 3) 2, divPoly ((makeConst :: Integer -> Polynomial Integer Char) 1) 3]
+-- 3 / 6
+-- > divPoly (makeVar 'x') 3
+-- x / 3
+-- > multPoly [divPoly (makeConst 3) 2, divPoly (makeVar 'x') 3]
+-- 3x / 6
+-- > expPoly (divPoly (makeVar 'x') 3) 2
+-- x^2 / 9
+-- > multPoly [divPoly (makeConst 3) 2, expPoly (divPoly (makeVar 'x') 3) 2]
+-- 3x^2 / 18
+-- > addPoly [makeVar 'x', divPoly (makeConst 3) 4, divPoly (makeConst 4) 3]
+-- (12x + 25) / 12
+
 makeConst :: CommutativeRing r => r -> Polynomial r v
 makeConst c = Const c r_one
 
