@@ -303,3 +303,21 @@ showPolynomial expShow e =
             where
                 genMultInfix _ _ = ""
                 formatMultOp x = shv 1 x
+
+
+
+
+-- Functor, Applicative, Monad
+
+instance Functor (Polynomial r) where
+    fmap f e =
+        case e of
+            Const n d -> Const n d
+            Expr e d  -> Expr (fmapVarExpression f e) d
+        where
+            fmapVarExpression f e =
+                case e of
+                    Var x     -> Var (f x)
+                    Add c es  -> Add c (map (fmapVarExpression f) es)
+                    Mult k es -> Mult k (map (fmapVarExpression f) es)
+                    Exp e n   -> Exp (fmapVarExpression f e) n
