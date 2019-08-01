@@ -8,7 +8,8 @@ module Eutherion.Utilities (
        padLeft,
        padRight,
        conditionalElem,
-       listToSimpleArray
+       listToSimpleArray,
+       joinList
 
        ) where
 
@@ -75,3 +76,15 @@ listToSimpleArray xs =
     let n      = length xs
         zipped = zip [0..] xs
     in  array (0, n - 1) zipped
+
+-- Joins a list of elements with an infix between two entries.
+joinList :: (a -> a -> [b]) -> (a -> [b]) -> [a] -> [b]
+joinList infixFn showFn elements =
+    case elements of
+        []   -> []
+        x:xs -> joinListInner infixFn showFn x xs
+    where
+        joinListInner infixFn showFn x1 elements =
+            case elements of
+                []    -> showFn x1
+                x2:xs -> showFn x1 ++ infixFn x1 x2 ++ joinListInner infixFn showFn x2 xs
