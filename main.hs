@@ -225,6 +225,8 @@ parseExpr tokens =
                     _          -> (e, remainder)
 
 -- Shorthand for 'make polynomial'
+-- > substituteVariable 'x' (makeConst 3) (mp "x^2 + 1")
+-- 10
 mp = parseExpr . lexExpr
 
 
