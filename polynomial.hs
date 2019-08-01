@@ -76,6 +76,7 @@ showPolynomial expShow e =
     case e of
         Const n d          -> withDivisor (show n) d False
         Expr (Add n es) d  -> withDivisor (shv 0 (Add n es)) d True
+        Expr (Mult n es) d -> withDivisor (shv 0 (Mult n es)) d True
         Expr e d           -> withDivisor (shv 0 e) d False
     where
         withDivisor s d needBrackets =
