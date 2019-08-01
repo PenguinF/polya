@@ -155,3 +155,74 @@ lexExpr x =
         buildExponent n (c:s)
             | fst (expToNumber c) = buildExponent (10 * n + (snd $ expToNumber c)) s
             | otherwise           = TkExponent n : lexExpr (c:s)
+
+-- Parses a polynomial with constant divisor 1.
+parseExpr :: [ExprToken] -> Polynomial Integer Char
+parseExpr tokens =
+    let (e, remainder) = parseSum tokens
+    in  case remainder of
+            [] -> e
+            _  -> parseError "Expected EOF"
+    where
+        parseError msg = error ("Parse error: " ++ msg)
+
+        parseExprThenRBracket tokens =
+            let (e, remainder) = parseSum tokens
+            in  case remainder of
+                    TkRBracket:ts -> (e, ts)
+                    _             -> parseError "Expected ')'"
+
+        parseOperand tokens =
+            case tokens of
+                TkLBracket:ts -> parseExprThenRBracket ts
+                TkNumber n:ts -> (makeConst n, ts)
+                TkVar x:ts    -> (makeVar x, ts)
+                []            -> parseError "Unexpected EOF"
+                _             -> parseError "Expected operand"
+
+        parseOperandExponent tokens =
+            let (e, remainder) = parseOperand tokens in eatExponents e remainder
+            where
+                eatExponents e remainder =
+                    case remainder of
+                        -- Lookahead if TkExpOp is followed by a number.
+                        TkExpOp:TkNumber n:ts -> eatExponents (expPoly e n) ts
+                        TkExpOp:ts            -> parseError "Expected non-negative number after '^'"
+                        TkExponent n:ts       -> eatExponents (expPoly e n) ts
+                        _                     -> (e, remainder)
+
+        parseUnaryPlusMinus tokens =
+            case tokens of
+                TkPlus:ts  -> parseUnaryPlusMinus ts
+                TkMinus:ts -> let (e, remainder) = parseUnaryPlusMinus ts in (multPoly [makeConst (-1), e], remainder)
+                _          -> parseOperandExponent tokens
+
+        parseProduct tokens =
+            let (e1, remainder) = parseUnaryPlusMinus tokens
+            in  case remainder of
+                    TkMultiply:ts -> let (e2, remainder2) = parseProduct ts in (multPoly [e1, e2], remainder2)
+                    -- These 3 cases allow for a slight ambiguity regarding the difference between binary and unary +/-.
+                    -- The interpretation of the resulting syntax trees is the same, so can safely ignore.
+                    TkLBracket:_  -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
+                    TkNumber _:_  -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
+                    TkVar _:_     -> let (e2, remainder2) = parseProduct remainder in (multPoly [e1, e2], remainder2)
+                    _             -> (e1, remainder)
+
+        parseSum tokens =
+            let (e, remainder) = parseProduct tokens
+            in  case remainder of
+                    TkPlus:ts  -> parseSum' e True ts
+                    TkMinus:ts -> parseSum' e False ts
+                    _          -> (e, remainder)
+
+        -- Parse this left associatively, because of minus operands.
+        parseSum' e1 isPositive tokens =
+            let (e2, remainder) = parseProduct tokens
+                e               = addPoly [e1, if isPositive then e2 else multPoly [makeConst (-1), e2]]
+            in  case remainder of
+                    TkPlus:ts  -> parseSum' e True ts
+                    TkMinus:ts -> parseSum' e False ts
+                    _          -> (e, remainder)
+
+-- Shorthand for 'make polynomial'
+mp = parseExpr . lexExpr
