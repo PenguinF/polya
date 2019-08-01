@@ -389,3 +389,29 @@ instance CommutativeRing r => Applicative (Polynomial r) where
 instance CommutativeRing a => Monad (Polynomial a) where
     return = pure
     (>>=)  = substitute
+
+
+
+
+-- CommutativeRing instance for Polynomial
+
+-- Maybe require Ord b constraint rather than Eq b, like Set, so normalization is more efficient?
+instance (CommutativeRing a, Eq b) => CommutativeRing (Polynomial a b) where
+    r_zero       = makeConst r_zero
+    r_one        = makeConst r_one
+    r_add p q    = addPoly [p, q]
+    r_mult p q   = multPoly [p, q]
+    r_exp p n    = expPoly p n
+    r_min p      = multPoly [makeConst (r_min r_one), p] -- TODO: r_add p (r_min p) must always be r_zero.
+    r_isNegative = r_isNegative'
+        where
+            r_isNegative' e =
+                case e of
+                    Const k d -> r_isNegative k
+                    Expr e d  -> r_isNegative'' e
+            r_isNegative'' e =
+                case e of
+                    Var y     -> False
+                    Add k es  -> False
+                    Mult k es -> r_isNegative k
+                    Exp e n   -> False
