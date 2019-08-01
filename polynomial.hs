@@ -9,14 +9,14 @@ import Eutherion.Utilities
 import Eutherion.CommutativeRing
 
 
--- Polynomials on arbitrary commutative rings, with a scaling factor which acts
--- as a divisor. This scaling factor is 2 in example polynomial ½(x + 4)³.
+-- Polynomials on arbitrary commutative rings, with a divisor.
+-- This divisor is 2 in example polynomial ½(x + 4)³.
 -- 'r' is the ring type, 'v' the type used for variables.
 
 -- Const r r is a constant scalar value. Const 2 3 represents 2/3.
--- Expr (VarExpression r v) r is an expression on variables, with a scaling factor.
+-- Expr (VarExpression r v) r is an expression on variables.
 -- ½(x + 4)³ is represented by:
--- PolyExpression (Exp (Add 4 [Var 'x']) 3) 2
+-- VarExpression (Exp (Add 4 [Var 'x']) 3) 2
 
 -- Invariants (0 == r_zero, 1 == r_one):
 --
