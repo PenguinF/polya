@@ -73,7 +73,17 @@ multPoly ps = error "Not yet implemented."
 
 -- Raises a polynomial to a power.
 expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
-expPoly p n = error "Not yet implemented."
+expPoly p n
+    -- Disallow zero exponent because of 0^0 and x^0. Purpose of this
+    -- polynomial type is not to solve equations to find those 'x' values
+    -- for which the result polynomial value is undefined.
+    | n <= 0    = error "Zero or negative exponents not allowed"
+    | n == 1    = p
+    | otherwise =
+        case p of
+            Const c d          -> Const (c `r_exp` n) (d `r_exp` n)
+            Expr (Exp e n') d  -> Expr (Exp e (n `r_mult` n')) (d `r_exp` n)
+            Expr e d           -> Expr (Exp e n) (d `r_exp` n)
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
 divPoly p d

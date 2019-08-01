@@ -257,15 +257,31 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         -- For copy-pasting: ⁰¹²³⁴⁵⁶⁷⁸⁹
         testExpressions =
             [
+            -- Exponents
+            ("0^1",           id, "0"),
+            ("0^5",           id, "0"),
+            ("0^5^2",         id, "0"),
+            ("2^1",           id, "2"),
+            ("2^5",           id, "32"),
+            ("2^5^2",         id, "1024"),
+            ("x^1",           id, "x"),
+            ("x^5",           id, "x⁵"),
+            ("x^5^2",         id, "x¹⁰"),
+            ("x^5^2^3",       id, "x³⁰"),
+
             -- Division
             ("6",      pdiv 1, "6"),
             ("6",      pdiv 2, "6 / 2"), -- not "3"
             ("x",      pdiv 1, "x"),
             ("x",      pdiv 2, "x / 2"),
+            ("x^2",    pdiv 2, "x² / 2"),
+            ("6",      pexp 2 . pdiv 3, "36 / 9"),
+            ("x^2",    pexp 2 . pdiv 3, "x⁴ / 9"),
 
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
             ]
 
+        pexp = swap expPoly
         pdiv = swap divPoly
