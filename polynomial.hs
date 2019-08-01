@@ -12,6 +12,7 @@ module Eutherion.Polynomial (
 
        substituteVar,
        substitute,
+       substituteApply,
 
        ShowablePolynomialVariable,
        showPoly,
@@ -215,6 +216,23 @@ substitute e f =
                 Add k es  -> addPoly (makeConst k : (map (substitute' f) es))
                 Mult k es -> multPoly (makeConst k : (map (substitute' f) es))
                 Exp e n   -> expPoly (substitute' f e) n
+
+substituteApply :: CommutativeRing r => Polynomial r (v -> w) -> Polynomial r v -> Polynomial r w
+substituteApply pf px =
+    -- Preserve structure of 'pf' polynomial.
+    -- Substitute (v -> w) variables with 'px' parameter in which all variables are replaced
+    -- with the result of applying the function to those variables.
+    -- It's weird but this does satisfy the Applicative laws.
+    case pf of
+        Const n d  -> Const n d
+        Expr pf d  -> divPoly (substituteApply' px pf) d
+    where
+        substituteApply' px pf =
+            case pf of
+                Var f     -> fmap f px
+                Add k es  -> addPoly (makeConst k : map (substituteApply' px) es)
+                Mult k es -> multPoly (makeConst k : map (substituteApply' px) es)
+                Exp e n   -> expPoly (substituteApply' px e) n
 
 
 
