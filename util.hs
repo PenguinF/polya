@@ -4,6 +4,7 @@ module Eutherion.Utilities (
        snd3,
        thd3,
        formatAsNumber,
+       exponentCharacterLookup,
        padLeft,
        padRight,
        conditionalElem,
@@ -47,6 +48,10 @@ formatAsNumber lookup n
             in  if (d == 0)
                     then lastDigit
                     else fmtPositiveNumber lookup d ++ lastDigit
+
+-- For showing exponents. See also formatAsNumber.
+exponentCharacterLookup :: String
+exponentCharacterLookup = "⁰¹²³⁴⁵⁶⁷⁸⁹"
 
 -- Pads a list on the left with an element up to a maximum total length.
 padLeft :: a -> Int -> [a] -> [a]
