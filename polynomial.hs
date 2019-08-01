@@ -41,7 +41,7 @@ import Eutherion.CommutativeRing
 -- 'Mult 1 [e]' is always simplified to 'e'.
 -- No element of 'es' in 'Add c es' is itself an Add expression.
 -- No element of 'es' in 'Mult k es' is itself a Mult expression.
--- 'e' in 'Exp e n' is never an Exp expression.
+-- 'e' in 'Exp e n' is never an Exp or Mult expression.
 
 data Polynomial r v = Const r r
                     | Expr (VarExpression r v) r
@@ -90,6 +90,13 @@ multPoly ps =
         (product, [e], d) | product == r_one  -> Expr e d
         (product, es, d)                      -> Expr (Mult product es) d
 
+-- Distributes an exponent over a product.
+-- (xy)^n -> x^n * y^n
+-- (Private)
+distributeExponent :: CommutativeRing r => r -> [VarExpression r v] -> r -> Integer -> Polynomial r v
+-- Recurse over expPoly because some terms may be Exp expressions.
+distributeExponent k es d n = multPoly (Const (k `r_exp` n) (d `r_exp` n) : [expPoly (Expr e r_one) n | e <- es])
+
 -- Raises a polynomial to a power.
 expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
 expPoly p n
@@ -102,6 +109,7 @@ expPoly p n
         case p of
             Const c d          -> Const (c `r_exp` n) (d `r_exp` n)
             Expr (Exp e n') d  -> Expr (Exp e (n `r_mult` n')) (d `r_exp` n)
+            Expr (Mult k es) d -> distributeExponent k es d n
             Expr e d           -> Expr (Exp e n) (d `r_exp` n)
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v

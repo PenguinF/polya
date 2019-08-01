@@ -268,11 +268,11 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x^5",           id, "x⁵"),
             ("x^5^2",         id, "x¹⁰"),
             ("x^5^2^3",       id, "x³⁰"),
-            ("(xyz)^5",       id, "(xyz)⁵"),
-            ("(2xy)^5",       id, "(2xy)⁵"),
+            ("(xyz)^5",       id, "x⁵y⁵z⁵"),
+            ("(2xy)^5",       id, "32x⁵y⁵"),
             ("2xy^5",         id, "2xy⁵"),
-            ("-(2x^2y)^4",    id, "-(2x²y)⁴"),
-            ("(2x^2y(-1))^4", id, "(-2x²y)⁴"),
+            ("-(2x^2y)^4",    id, "-16x⁸y⁴"),
+            ("(2x^2y(-1))^4", id, "16x⁸y⁴"),
 
             -- Multiplication
             ("(1 (2∙3) 4) 5", id, "120"),
