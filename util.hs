@@ -1,5 +1,6 @@
 module Eutherion.Utilities (
 
+       swap,
        fst3,
        snd3,
        thd3,
@@ -15,6 +16,9 @@ module Eutherion.Utilities (
        ) where
 
 import Data.Array
+
+swap :: (a -> b -> c) -> b -> a -> c
+swap f x y = f y x
 
 fst3 :: (a, b, c) -> a
 fst3 (x, y, z) = x

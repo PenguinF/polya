@@ -257,7 +257,15 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         -- For copy-pasting: ⁰¹²³⁴⁵⁶⁷⁸⁹
         testExpressions =
             [
+            -- Division
+            ("6",      pdiv 1, "6"),
+            ("6",      pdiv 2, "6 / 2"), -- not "3"
+            ("x",      pdiv 1, "x"),
+            ("x",      pdiv 2, "x / 2"),
+
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
             ]
+
+        pdiv = swap divPoly

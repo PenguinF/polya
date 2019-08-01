@@ -76,7 +76,12 @@ expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
 expPoly p n = error "Not yet implemented."
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
-divPoly p d = error "Not yet implemented."
+divPoly p d
+    | d == r_zero = error "Division by zero"
+    | otherwise   =
+        case p of
+            Const c d' -> Const c (d `r_mult` d')
+            Expr e d'  -> Expr e (d `r_mult` d')
 
 
 
