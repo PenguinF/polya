@@ -10,6 +10,9 @@ module Eutherion.Polynomial (
        expPoly,
        divPoly,
 
+       substituteVar,
+       substitute,
+
        ShowablePolynomialVariable,
        showPoly,
        showPolynomial
@@ -186,6 +189,32 @@ divPoly p d
         case p of
             Const c d' -> Const c (d `r_mult` d')
             Expr e d'  -> Expr e (d `r_mult` d')
+
+
+
+
+-- Substitution functions
+
+-- Substitutes variable x with polynomial p in polynomial q.
+substituteVar :: (CommutativeRing r, Ord v) => v -> Polynomial r v -> Polynomial r v -> Polynomial r v
+substituteVar x p q = substitute q (replaceIfEqual x p)
+    where
+        replaceIfEqual :: (CommutativeRing r, Ord v) => v -> Polynomial r v -> v -> Polynomial r v
+        replaceIfEqual x p y | x == y    = p
+                             | otherwise = makeVar y
+
+substitute :: CommutativeRing r => Polynomial r v -> (v -> Polynomial r w) -> Polynomial r w
+substitute e f =
+    case e of
+        Const n d -> Const n d
+        Expr e d  -> divPoly (substitute' f e) d
+    where
+        substitute' f e =
+            case e of
+                Var y     -> f y
+                Add k es  -> addPoly (makeConst k : (map (substitute' f) es))
+                Mult k es -> multPoly (makeConst k : (map (substitute' f) es))
+                Exp e n   -> expPoly (substitute' f e) n
 
 
 

@@ -322,6 +322,12 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
             ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
 
+            -- Substitution
+            ("x+2",        substituteVar 'x' (makeConst 0), "2"),
+            ("2x",         substituteVar 'x' (makeConst 0), "0"),
+            ("2xy+x-3",    substituteVar 'x' (makeConst 3), "6y"),
+            ("(x-3)(x+y)", substituteVar 'x' (makeConst 2), "-(y + 2)"),
+
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
