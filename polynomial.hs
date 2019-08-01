@@ -57,10 +57,11 @@ data VarExpression r v = Var v
 -- Constructor functions
 
 makeConst :: CommutativeRing r => r -> Polynomial r v
-makeConst c = error "Not yet implemented."
+makeConst c = Const c r_one
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
-makeVar x = error "Not yet implemented."
+makeVar x = Expr (Var x) r_one
+
 
 -- Adds a list of polynomials to form a new polynomial.
 addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
