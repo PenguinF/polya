@@ -31,10 +31,6 @@ cayleyTable (PolyaGroup slots fns) =
         inverseTable = listToSimpleArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
-        fst3 (x, y, z) = x
-        snd3 (x, y, z) = y
-        thd3 (x, y, z) = z
-
         applied = assertNoDuplicates $ [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
 
         assertClosed slots slots' =

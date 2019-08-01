@@ -1,5 +1,8 @@
 module Eutherion.Utilities (
 
+       fst3,
+       snd3,
+       thd3,
        formatAsNumber,
        padLeft,
        padRight,
@@ -9,6 +12,15 @@ module Eutherion.Utilities (
        ) where
 
 import Data.Array
+
+fst3 :: (a, b, c) -> a
+fst3 (x, y, z) = x
+
+snd3 :: (a, b, c) -> b
+snd3 (x, y, z) = y
+
+thd3 :: (a, b, c) -> c
+thd3 (x, y, z) = z
 
 -- Formats an integer value using a custom digit character lookup.
 -- A dash ('-') is used for a minus sign.
