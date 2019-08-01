@@ -226,3 +226,38 @@ parseExpr tokens =
 
 -- Shorthand for 'make polynomial'
 mp = parseExpr . lexExpr
+
+
+
+
+-- Tests: create expression from string, transform, show expression.
+ut :: IO()
+ut = putStrLn $ unitTest 0 0 testExpressions
+    where
+        unitTest f s x =
+            case x of
+                []  -> "Run "
+                       ++ show (f + s)
+                       ++ " tests: "
+                       ++ (if (f == 0) then "all successful." else show f ++ " failed.")
+                ((input, transform, expected):us)
+                    -> let actual = showPoly $ transform $ parseExpr $ lexExpr $ input
+                       in  if expected == actual
+                              then unitTest f (s+1) us
+                              else "Failed test: Expected: \""
+                                   ++ expected
+                                   ++ "\" Actual: \""
+                                   ++ actual
+                                   ++ "\" Input: \""
+                                   ++ input
+                                   ++ "\"\n"
+                                   ++ unitTest (f+1) s us
+
+        -- (Input, Transformation function, Expected)
+        -- For copy-pasting: ⁰¹²³⁴⁵⁶⁷⁸⁹
+        testExpressions =
+            [
+            -- Basic parse tests.
+            (" 0 ", id, "0"),
+            (" x ", id, "x")
+            ]
