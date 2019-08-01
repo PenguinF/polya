@@ -62,10 +62,61 @@ makeConst c = Const c r_one
 makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Expr (Var x) r_one
 
+-- Extracts all constants and embedded Add expressions from a list of polynomials.
+-- Assumes all operands have already been normalized.
+-- (Private)
+extractConstantsAndAddOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
+extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
+    where
+        -- Say that our divisors list looks like this:
+        -- [2, 3, 5, 1, 1, 3]
+        --
+        -- Then we want to multiply each element by the product of all other elements
+        -- to get a common divisor:
+        -- [ 2,  3,  5,  1,  1,  3]
+        -- [45, 30, 18, 90, 90, 30]
+        -- ------------------------ *
+        -- [90, 90, 90, 90, 90, 90]
+        --
+        -- Without a division operator or a least common multiple (which implies an ordering
+        -- on the ring elements), this must be done by using r_mult operations only.
+        --
+        -- One way to do this is to associate each element with the product of all elements before and after it, like this:
+        -- [ 2,  3, 5,  1,  1,  3]
+        -- [ 1,  2, 6, 30, 30, 30] (before)
+        -- [45, 15, 3,  3,  3,  1] (after)
+        --
+        -- The 'before' list can be done by adding an extra 'running value' parameter (beforeProduct),
+        -- the 'after' list by using the returned divisor value.
+        extractConstantsAndAddOperands' :: CommutativeRing r => r -> [Polynomial r v] -> (r, [VarExpression r v], r)
+        extractConstantsAndAddOperands' beforeProduct es =
+            case es of
+                []                      -> (r_zero, [], r_one)
+                Const n d : es          -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                                               multiplier   = beforeProduct `r_mult` d'
+                                               n''          = (n `r_mult` multiplier) `r_add` n'
+                                           in  (n'', vs, d' `r_mult` d)
+                Expr (Add n es') d : es -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                                               multiplier   = beforeProduct `r_mult` d'
+                                               n''          = (n `r_mult` multiplier) `r_add` n'
+                                           in  (n'', map (distribute multiplier) es' ++ vs, d' `r_mult` d)
+                Expr e d : es           -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                                               multiplier   = beforeProduct `r_mult` d'
+                                           in  (n', distribute multiplier e : vs, d' `r_mult` d)
+
+        distribute multiplier e
+            | multiplier == r_one = e
+            | otherwise           = case e of
+                                        Mult k es -> Mult (multiplier `r_mult` k) es
+                                        e         -> Mult multiplier [e]
 
 -- Adds a list of polynomials to form a new polynomial.
 addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
-addPoly ps = error "Not yet implemented."
+addPoly ps =
+    case extractConstantsAndAddOperands ps of
+        (sum, [], d)                  -> Const sum d
+        (sum, [e], d) | sum == r_zero -> Expr e d
+        (sum, es, d)                  -> Expr (Add sum es) d
 
 -- Extracts all constants and embedded Mult expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.

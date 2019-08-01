@@ -273,6 +273,7 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("2xy^5",         id, "2xy⁵"),
             ("-(2x^2y)^4",    id, "-16x⁸y⁴"),
             ("(2x^2y(-1))^4", id, "16x⁸y⁴"),
+            ("(x^5+y)^2",     id, "(x⁵ + y)²"),
 
             -- Multiplication
             ("(1 (2∙3) 4) 5", id, "120"),
@@ -281,6 +282,21 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("10x",           id, "10x"),
             ("-x∙3",          id, "-3x"),
             ("y(-xz)∙3",      id, "-3yxz"),
+
+            -- Addition
+            ("(1 + (2+3) + 4) + 5", id, "15"),
+            ("1 + 0x",              id, "1"),
+            ("4 - (5 - 2)",         id, "1"),
+            ("4 - 5 - 2",           id, "-3"),
+            ("-4 - (5 - 2)",        id, "-7"),
+            ("-4 - 5 - 2",          id, "-11"),
+            ("--4 -- 5",            id, "9"),
+            ("--4 -+-5",            id, "9"),
+            ("-+4 +--5",            id, "1"),
+            ("-4 - x(5 - 2)",       id, "-3x - 4"),
+            ("-y+x",                id, "-y + x"),
+            ("1 - x(5 - 2y)",       id, "-x(-2y + 5) + 1"),
+            ("1 - x5 - 2y",         id, "-5x - 2y + 1"),
 
             -- Division
             ("6",      pdiv 1, "6"),
@@ -301,12 +317,18 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("-8",     pdiv 2 . cmult 3 . xmult, "-24x / 2"),
             ("-8",     cmult 3 . xmult . ymult . pdiv 2, "-24xy / 2"),
             ("18y",    pmult (divPoly (makeVar 'x') 6) . pdiv 5, "18xy / 30"),
+            ("-8x",    cadd 3 . pdiv 2, "(-8x + 6) / 2"),
+            ("2x",     padds [divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(12x + 10y + 15z) / 30"),
+            ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
+            ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
 
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
             ]
 
+        cadd c p = addPoly [makeConst c, p]
+        padds ps q = addPoly (q : ps)
         cmult c p = multPoly [makeConst c, p]
         xmult p = multPoly [makeVar 'x', p]
         ymult p = multPoly [makeVar 'y', p]
