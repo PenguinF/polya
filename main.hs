@@ -268,6 +268,19 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x^5",           id, "x⁵"),
             ("x^5^2",         id, "x¹⁰"),
             ("x^5^2^3",       id, "x³⁰"),
+            ("(xyz)^5",       id, "(xyz)⁵"),
+            ("(2xy)^5",       id, "(2xy)⁵"),
+            ("2xy^5",         id, "2xy⁵"),
+            ("-(2x^2y)^4",    id, "-(2x²y)⁴"),
+            ("(2x^2y(-1))^4", id, "(-2x²y)⁴"),
+
+            -- Multiplication
+            ("(1 (2∙3) 4) 5", id, "120"),
+            ("0x",            id, "0"),
+            ("1x",            id, "x"),
+            ("10x",           id, "10x"),
+            ("-x∙3",          id, "-3x"),
+            ("y(-xz)∙3",      id, "-3yxz"),
 
             -- Division
             ("6",      pdiv 1, "6"),
@@ -277,11 +290,26 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x^2",    pdiv 2, "x² / 2"),
             ("6",      pexp 2 . pdiv 3, "36 / 9"),
             ("x^2",    pexp 2 . pdiv 3, "x⁴ / 9"),
+            ("3x",     pdiv 2, "3x / 2"),
+            ("(x⁴)3",  pdiv 2, "3x⁴ / 2"),
+            ("-8x⁴",   pdiv 2, "-8x⁴ / 2"),
+            ("-8x⁴",   cmult 0 . pdiv 2, "0"),
+            ("-8x⁴",   cmult 1 . pdiv 2, "-8x⁴ / 2"),
+            ("-8",     xmult . pdiv 2, "-8x / 2"),
+            ("-8",     cmult 3 . xmult . pdiv 2, "-24x / 2"),
+            ("-8",     cmult 3 . pdiv 2 . xmult, "-24x / 2"),
+            ("-8",     pdiv 2 . cmult 3 . xmult, "-24x / 2"),
+            ("-8",     cmult 3 . xmult . ymult . pdiv 2, "-24xy / 2"),
+            ("18y",    pmult (divPoly (makeVar 'x') 6) . pdiv 5, "18xy / 30"),
 
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
             ]
 
+        cmult c p = multPoly [makeConst c, p]
+        xmult p = multPoly [makeVar 'x', p]
+        ymult p = multPoly [makeVar 'y', p]
+        pmult p q = multPoly [p, q]
         pexp = swap expPoly
         pdiv = swap divPoly

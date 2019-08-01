@@ -67,9 +67,28 @@ makeVar x = Expr (Var x) r_one
 addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
 addPoly ps = error "Not yet implemented."
 
+-- Extracts all constants and embedded Mult expressions from a list of polynomials.
+-- Assumes all operands have already been normalized.
+-- (Private)
+extractConstantsAndMultOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
+extractConstantsAndMultOperands es =
+    case es of
+        []                       -> (r_one, [], r_one)
+        Const n d : es           -> let (n', vs, d') = extractConstantsAndMultOperands es
+                                    in  (n `r_mult` n', vs, d `r_mult` d')
+        Expr (Mult n es') d : es -> let (n', vs, d') = extractConstantsAndMultOperands es
+                                    in  (n `r_mult` n', es' ++ vs, d `r_mult` d')
+        Expr e d : es            -> let (n', vs, d') = extractConstantsAndMultOperands es
+                                    in  (n', e : vs, d `r_mult` d')
+
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
-multPoly ps = error "Not yet implemented."
+multPoly ps =
+    case extractConstantsAndMultOperands ps of
+        (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x'.
+        (product, es, d)  | product == r_zero -> Const r_zero r_one
+        (product, [e], d) | product == r_one  -> Expr e d
+        (product, es, d)                      -> Expr (Mult product es) d
 
 -- Raises a polynomial to a power.
 expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
@@ -129,7 +148,6 @@ showPolynomial expShow e =
     case e of
         Const n d          -> withDivisor (show n) d False
         Expr (Add n es) d  -> withDivisor (shv 0 (Add n es)) d True
-        Expr (Mult n es) d -> withDivisor (shv 0 (Mult n es)) d True
         Expr e d           -> withDivisor (shv 0 e) d False
     where
         withDivisor s d needBrackets =
