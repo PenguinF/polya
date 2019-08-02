@@ -32,11 +32,12 @@ class Eq a => CommutativeRing a where
     r_one  :: a            -- identity under multiplication (1)
 
     -- Optional function which has an effect on how values smaller than zero are shown.
+    -- E.g. x - 2 versus x + -2
     r_isNegative :: a -> Bool
     r_isNegative _ = False
 
     -- If r_isNegative, returns its inverse, otherwise just the value.
-    -- E.g. x - 2 versus x + -2
+    -- Assumes that if 'r_isNegative x == True', 'r_isNegative $ r_min x == False'.
     r_abs :: a -> a
     r_abs x
         | r_isNegative x = r_min x
