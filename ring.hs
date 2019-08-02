@@ -36,6 +36,7 @@ class Eq a => CommutativeRing a where
     r_isNegative _ = False
 
     -- If r_isNegative, returns its inverse, otherwise just the value.
+    -- E.g. x - 2 versus x + -2
     r_abs :: a -> a
     r_abs x
         | r_isNegative x = r_min x
