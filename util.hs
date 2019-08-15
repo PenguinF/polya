@@ -11,7 +11,8 @@ module Eutherion.Utilities (
        padRight,
        conditionalElem,
        listToSimpleArray,
-       joinList
+       joinList,
+       desc
 
        ) where
 
@@ -102,3 +103,8 @@ joinList infixFn showFn elements =
             case elements of
                 []    -> showFn x1
                 x2:xs -> showFn x1 ++ infixFn x1 x2 ++ joinListInner infixFn showFn x2 xs
+
+desc :: Ordering -> Ordering
+desc LT = GT
+desc EQ = EQ
+desc GT = LT

@@ -219,6 +219,57 @@ substitute e f =
 
 
 
+-- Private ordering functions
+
+-- Chains orderings by priority.
+orderBy :: Ordering -> Ordering -> Ordering
+orderBy x y =
+    case x of
+        EQ -> y
+        x  -> x
+
+-- Normalizes everything to a Mult expression for comparison within an Add expression.
+makeAddTerm :: CommutativeRing r => VarExpression r v -> (r, [VarExpression r v])
+makeAddTerm e =
+    case e of
+        Mult k es -> (k, es)
+        e         -> (r_one, [e])
+
+-- Compares two terms of an Add expression. 'Lesser' terms go in front.
+-- Assume by induction on structure that subexpressions are normalized already.
+compareAddTerm :: (CommutativeRing r, Ord r, Ord v) => (r, [VarExpression r v]) -> (r, [VarExpression r v]) -> Ordering
+compareAddTerm (m, xs) (n, ys) =
+    case (m, xs, n, ys) of
+        (m, [], n, [])     -> compare m n
+        (_, [], _, _)      -> GT
+        (_, _, _, [])      -> LT
+        (m, x:xs, n, y:ys) -> orderBy (compareMultTerm (makeMultTerm x) (makeMultTerm y)) (compareAddTerm (m, xs) (n, ys))
+
+-- Normalizes everything to an Exp expression for comparison within a Mult expression.
+makeMultTerm :: CommutativeRing r => VarExpression r v -> (VarExpression r v, Integer)
+makeMultTerm e =
+    case e of
+        Exp e n -> (e, n)
+        e       -> (e, r_one)
+
+-- Compares two terms of a Mult expression. 'Lesser' terms go in front.
+-- Assume by induction on structure that subexpressions are normalized already.
+compareMultTerm :: (CommutativeRing r, Ord r, Ord v) => (VarExpression r v, Integer) -> (VarExpression r v, Integer) -> Ordering
+compareMultTerm (x, m) (y, n) = orderBy (compareExpTerm x y) (desc $ compare m n)
+
+-- Compares two terms of an Exp expression. 'Lesser' terms go in front.
+-- Assume by induction on structure that subexpressions are normalized already.
+compareExpTerm :: (CommutativeRing r, Ord r, Ord v) => VarExpression r v -> VarExpression r v -> Ordering
+compareExpTerm e f =
+    case (e, f) of
+        (Var x, Var y)     -> compare x y
+        (Var _, _)         -> LT
+        (_, Var _)         -> GT
+        (Add m x, Add n y) -> compareAddTerm (m, x) (n, y)
+
+
+
+
 -- Show instance for polynomials
 -- ShowablePolynomialVariable type class for assigning functions to display variables.
 -- A Show instance does not work for characters because they are generated with quotes.
