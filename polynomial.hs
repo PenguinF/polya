@@ -12,7 +12,6 @@ module Eutherion.Polynomial (
 
        substituteVar,
        substitute,
-       substituteApply,
 
        ShowablePolynomialVariable,
        showPoly,
@@ -217,24 +216,6 @@ substitute e f =
                 Mult k es -> multPoly (makeConst k : (map (substitute' f) es))
                 Exp e n   -> expPoly (substitute' f e) n
 
-substituteApply :: CommutativeRing r => Polynomial r (v -> w) -> Polynomial r v -> Polynomial r w
-substituteApply pf px =
-    -- Preserve structure of 'pf' polynomial.
-    -- Substitute (v -> w) variables with 'px' parameter in which all variables are replaced
-    -- with the result of applying the function to those variables.
-    -- It's weird but this does satisfy the Applicative laws.
-    case pf of
-        Const n d  -> Const n d
-        Expr pf d  -> divPoly (substituteApply' px pf) d
-    where
-        substituteApply' px pf =
-            case pf of
-                Var f     -> fmap f px
-                Add k es  -> addPoly (makeConst k : map (substituteApply' px) es)
-                Mult k es -> multPoly (makeConst k : map (substituteApply' px) es)
-                Exp e n   -> expPoly (substituteApply' px e) n
-
-
 
 
 
@@ -325,8 +306,6 @@ showPolynomial expShow e =
 
 
 
--- Functor, Applicative, Monad
-
 instance Functor (Polynomial r) where
     fmap f e =
         case e of
@@ -339,56 +318,6 @@ instance Functor (Polynomial r) where
                     Add c es  -> Add c (map (fmapVarExpression f) es)
                     Mult k es -> Mult k (map (fmapVarExpression f) es)
                     Exp e n   -> Exp (fmapVarExpression f e) n
-
-instance CommutativeRing r => Applicative (Polynomial r) where
-    pure  = makeVar
-    (<*>) = substituteApply
-
--- Using a polynomial as a monad causes some interesting behavior.
--- (Using the mp function from main.hs in the examples.)
-
--- To substitute "x - 1 + 4y^2" for all variables in "2a - 3b^2 + 1":
--- > do { ab <- mp "2a - 3b^2 + 1"; mp "x - 1 + 4y^2" }
--- (or, equivalently, see next example)
--- > do { ab <- mp "2a - 3b^2 + 1"; xy <- mp "x - 1 + 4y^2"; return xy }
--- 2(x + 4y^2 - 1) - 3(x + 4y^2 - 1)^2 + 1
-
--- To substitute "x - 1 + 4y^2" for all variables in "2a - 3b^2 + 1",
--- then substitute 'x' and 'y' with either 'a' or 'b', depending on whether
--- the first substitution was for the original 'a' or 'b' variable:
--- > do { ab <- mp "2a - 3b^2 + 1"; xy <- mp "x - 1 + 4y^2"; return ab }
--- 2(a + 4a^2 - 1) - 3(b + 4b^2 - 1)^2 + 1
-
--- Substitute (ab, xy) rather than ab:
--- > do { ab <- mp "2a - 3b^2 + 1"; xy <- mp "x - 1 + 4y^2"; return (ab, xy) }
--- 2(('a','x') + 4('a','y')^2 - 1) - 3(('b','x') + 4('b','y')^2 - 1)^2 + 1
-
--- To substitute only 'b' with another polynomial:
---
--- do ab <- mp "2a - 3b^2 + 1"
---    if ab /= 'b'
---        then return ab
---        else mp "4y^2 + x - 1"
---
--- > do { ab <- mp "2a - 3b^2 + 1"; if ab /= 'b' then return ab else mp "4y^2 + x - 1" }
--- 2a - 3(4y^2 + x - 1)^2 + 1
-
--- To substitute 'b' with the xy-polynomial, then 'x' with 0:
---
--- do ab  <- mp "2a - 3b^2 + 1"
---    axy <- if ab == 'b'
---               then mp "4y^2 + x - 1"
---               else return ab
---    if axy == 'x'
---        then makeConst 0
---        else return axy
---
--- > do { ab <- mp "2a - 3b^2 + 1"; axy <- if ab == 'b' then mp "4y^2 + x - 1" else return ab; if axy == 'x' then makeConst 0 else return axy }
--- 2a - 3(4y^2 - 1)^2 + 1
-
-instance CommutativeRing a => Monad (Polynomial a) where
-    return = pure
-    (>>=)  = substitute
 
 
 
