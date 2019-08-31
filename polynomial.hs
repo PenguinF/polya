@@ -133,10 +133,13 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
 -- Adds a list of polynomials to form a new polynomial.
 addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
 addPoly ps =
-    case extractConstantsAndAddOperands ps of
+    case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> Const sum d
         (sum, [e], d) | sum == r_zero -> Expr e d
         (sum, es, d)                  -> Expr (Add sum es) d
+    where
+        -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
+        combineSum (sum, es, d) = (sum, es, d)
 
 -- Extracts all constants and embedded Mult expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
@@ -168,12 +171,15 @@ distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [C
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
 multPoly ps =
-    case extractConstantsAndMultOperands ps of
+    case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
         (product, es, d)  | product == r_zero -> Const r_zero r_one
         (product, [e], d) | product == r_one  -> Expr e d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
         (product, es, d)                      -> Expr (Mult product es) d
+    where
+        -- x^m * x^n -> x^(m+n)
+        combineProduct (product, es, d) = (product, es, d)
 
 -- Distributes an exponent over a product.
 -- (xy)^n -> x^n * y^n
