@@ -45,6 +45,7 @@ import Eutherion.CommutativeRing
 -- No element of 'es' in 'Add c es' is itself an Add expression.
 -- No element of 'es' in 'Mult k es' is itself a Mult expression.
 -- 'e' in 'Exp e n' is never an Exp or Mult expression.
+-- 'Mult k [Add c es]' is expanded to 'Add (c*k) fs' where k is distributed over each expression in es.
 
 data Polynomial r v = Const r r
                     | Expr (VarExpression r v) r
@@ -151,6 +152,19 @@ extractConstantsAndMultOperands es =
         Expr e d : es            -> let (n', vs, d') = extractConstantsAndMultOperands es
                                     in  (n', e : vs, d `r_mult` d')
 
+-- Distributes a multiplier over a sum.
+-- k(x + y) -> kx + ky
+-- (Private)
+-- Can't simplify this function, because it's not guaranteed to preserve its inner structure.
+-- This is because there could exist elements that when multiplied together yield r_zero or r_one,
+-- like in the clock group where (6 * 2) mod 12 = 0.
+-- Example expression with simplification:
+--     [6(2x + y + 3)] mod 12
+--   = [12x + 6y + 18] mod 12
+--   = [6y + 6] mod 12
+distributeMultiplier :: CommutativeRing r => r -> r -> [VarExpression r v] -> Polynomial r v
+distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [Const k r_one, Expr e r_one] | e <- es])
+
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
 multPoly ps =
@@ -158,6 +172,7 @@ multPoly ps =
         (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x'.
         (product, es, d)  | product == r_zero -> Const r_zero r_one
         (product, [e], d) | product == r_one  -> Expr e d
+        (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
         (product, es, d)                      -> Expr (Mult product es) d
 
 -- Distributes an exponent over a product.
