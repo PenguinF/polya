@@ -4,6 +4,7 @@ module Eutherion.Polynomial (
        VarExpression,
 
        makeConst,
+       makeRational,
        makeVar,
        addPoly,
        multPoly,
@@ -37,6 +38,7 @@ import Eutherion.CommutativeRing
 -- Invariants (0 == r_zero, 1 == r_one):
 --
 -- 'd' in 'Const x d' is never equal to 0.
+-- If 'x' in 'Const x d' is equal to 0, then 'd' is equal to 1.
 -- 'd' in 'Expr e d' is never equal to 0.
 -- 'es' in 'Add c es' is always non-empty.
 -- 'es' in 'Mult k es' is always non-empty.
@@ -80,6 +82,11 @@ data VarExpression r v = Var v
 
 makeConst :: CommutativeRing r => r -> Polynomial r v
 makeConst c = Const c r_one
+
+makeRational :: CommutativeRing r => r -> r -> Polynomial r v
+makeRational c d
+    | c == r_zero = Const r_zero r_one
+    | otherwise   = Const c d
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Expr (Var x) r_one
@@ -136,7 +143,7 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
 addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
 addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
-        (sum, [], d)                  -> Const sum d
+        (sum, [], d)                  -> makeRational sum d
         (sum, [e], d) | sum == r_zero -> Expr e d
         (sum, es, d)                  -> Expr (Add sum es) d
     where
@@ -180,7 +187,7 @@ distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [C
 multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
 multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
-        (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
+        (product, [], d)                      -> makeRational product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
         (product, es, d)  | product == r_zero -> Const r_zero r_one
         (product, [e], d) | product == r_one  -> Expr e d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
@@ -199,7 +206,7 @@ multPoly ps =
 -- (Private)
 distributeExponent :: (CommutativeRing r, Ord r, Ord v) => r -> [VarExpression r v] -> Integer -> Polynomial r v
 -- Recurse over expPoly because some terms may be Exp expressions.
-distributeExponent k es n = multPoly (Const (k `r_exp` n) r_one : [expPoly (Expr e r_one) n | e <- es])
+distributeExponent k es n = multPoly (makeRational (k `r_exp` n) r_one : [expPoly (Expr e r_one) n | e <- es])
 
 -- Raises a polynomial to a power.
 expPoly :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Integer -> Polynomial r v
@@ -211,7 +218,7 @@ expPoly p n
     | n == 1    = p
     | otherwise =
         case p of
-            Const c d          -> Const (c `r_exp` n) (d `r_exp` n)
+            Const c d          -> makeRational (c `r_exp` n) (d `r_exp` n)
             Expr (Exp e n') d  -> Expr (Exp e (n * n')) (d `r_exp` n)
             Expr (Mult k es) d -> divPoly (distributeExponent k es n) (d `r_exp` n)
             Expr e d           -> Expr (Exp e n) (d `r_exp` n)
@@ -221,7 +228,7 @@ divPoly p d
     | d == r_zero = error "Division by zero"
     | otherwise   =
         case p of
-            Const c d' -> Const c (d `r_mult` d')
+            Const c d' -> makeRational c (d `r_mult` d')
             Expr e d'  -> Expr e (d `r_mult` d')
 
 
