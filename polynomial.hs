@@ -131,7 +131,7 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
                                         e         -> Mult multiplier [e]
 
 -- Adds a list of polynomials to form a new polynomial.
-addPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
+addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
 addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> Const sum d
@@ -139,7 +139,7 @@ addPoly ps =
         (sum, es, d)                  -> Expr (Add sum es) d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
-        combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (\x -> \y -> GT) (map makeAddTerm es), d)
+        combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms compareAddTerm (map makeAddTerm es), d)
         combineGroupedAddTerms t [] =
             case t of
                 (k, es)  | k == r_zero -> []
@@ -171,11 +171,11 @@ extractConstantsAndMultOperands es =
 --     [6(2x + y + 3)] mod 12
 --   = [12x + 6y + 18] mod 12
 --   = [6y + 6] mod 12
-distributeMultiplier :: CommutativeRing r => r -> r -> [VarExpression r v] -> Polynomial r v
+distributeMultiplier :: (CommutativeRing r, Ord r, Ord v) => r -> r -> [VarExpression r v] -> Polynomial r v
 distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [Const k r_one, Expr e r_one] | e <- es])
 
 -- Multiplies a list of polynomials to form a new polynomial.
-multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
+multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
 multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
@@ -185,7 +185,7 @@ multPoly ps =
         (product, es, d)                      -> Expr (Mult product es) d
     where
         -- x^m * x^n -> x^(m+n)
-        combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (\x -> \y -> GT) (map makeMultTerm es), d)
+        combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms compareMultTerm (map makeMultTerm es), d)
         combineGroupedMultTerms t [] =
             case t of
                 (e, n) | n == 1 -> [e]
@@ -195,12 +195,12 @@ multPoly ps =
 -- Distributes an exponent over a product.
 -- (xy)^n -> x^n * y^n
 -- (Private)
-distributeExponent :: CommutativeRing r => r -> [VarExpression r v] -> Integer -> Polynomial r v
+distributeExponent :: (CommutativeRing r, Ord r, Ord v) => r -> [VarExpression r v] -> Integer -> Polynomial r v
 -- Recurse over expPoly because some terms may be Exp expressions.
 distributeExponent k es n = multPoly (Const (k `r_exp` n) r_one : [expPoly (Expr e r_one) n | e <- es])
 
 -- Raises a polynomial to a power.
-expPoly :: CommutativeRing r => Polynomial r v -> Integer -> Polynomial r v
+expPoly :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Integer -> Polynomial r v
 expPoly p n
     -- Disallow zero exponent because of 0^0 and x^0. Purpose of this
     -- polynomial type is not to solve equations to find those 'x' values
@@ -228,14 +228,14 @@ divPoly p d
 -- Substitution functions
 
 -- Substitutes variable x with polynomial p in polynomial q.
-substituteVar :: (CommutativeRing r, Ord v) => v -> Polynomial r v -> Polynomial r v -> Polynomial r v
+substituteVar :: (CommutativeRing r, Ord r, Ord v) => v -> Polynomial r v -> Polynomial r v -> Polynomial r v
 substituteVar x p q = substitute q (replaceIfEqual x p)
     where
         replaceIfEqual :: (CommutativeRing r, Ord v) => v -> Polynomial r v -> v -> Polynomial r v
         replaceIfEqual x p y | x == y    = p
                              | otherwise = makeVar y
 
-substitute :: CommutativeRing r => Polynomial r v -> (v -> Polynomial r w) -> Polynomial r w
+substitute :: (CommutativeRing r, Ord r, Ord v, Ord w) => Polynomial r v -> (v -> Polynomial r w) -> Polynomial r w
 substitute e f =
     case e of
         Const n d -> Const n d
@@ -408,7 +408,7 @@ instance Functor (Polynomial r) where
 -- CommutativeRing instance for Polynomial
 
 -- Maybe require Ord b constraint rather than Eq b, like Set, so normalization is more efficient?
-instance (CommutativeRing a, Eq b) => CommutativeRing (Polynomial a b) where
+instance (CommutativeRing a, Ord a, Ord b) => CommutativeRing (Polynomial a b) where
     r_zero       = makeConst r_zero
     r_one        = makeConst r_one
     r_add p q    = addPoly [p, q]
