@@ -139,7 +139,7 @@ addPoly ps =
         (sum, es, d)                  -> Expr (Add sum es) d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
-        combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms compareAddTerm (map makeAddTerm es), d)
+        combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (compareAddTerm True) (map makeAddTerm es), d)
         combineGroupedAddTerms t [] =
             case t of
                 (k, es)  | k == r_zero -> []
@@ -269,13 +269,19 @@ makeAddTerm e =
 
 -- Compares two terms of an Add expression. 'Lesser' terms go in front.
 -- Assume by induction on structure that subexpressions are normalized already.
-compareAddTerm :: (CommutativeRing r, Ord r, Ord v) => (r, [VarExpression r v]) -> (r, [VarExpression r v]) -> Ordering
-compareAddTerm (m, xs) (n, ys) =
-    case (m, xs, n, ys) of
-        (m, [], n, [])     -> compare m n
-        (_, [], _, _)      -> GT
-        (_, _, _, [])      -> LT
-        (m, x:xs, n, y:ys) -> orderBy (compareMultTerm (makeMultTerm x) (makeMultTerm y)) (compareAddTerm (m, xs) (n, ys))
+compareAddTerm :: (CommutativeRing r, Ord r, Ord v) => Bool -> (r, [VarExpression r v]) -> (r, [VarExpression r v]) -> Ordering
+compareAddTerm ignoreCoefficient (m, xs) (n, ys) =
+    case ignoreCoefficient of
+        False -> orderBy (compareProduct xs ys) (compare n m)  -- 3x + 1 > 2x + 1
+        True  -> compareProduct xs ys
+
+compareProduct :: (CommutativeRing r, Ord r, Ord v) => [VarExpression r v] -> [VarExpression r v] -> Ordering
+compareProduct xs ys =
+    case (xs, ys) of
+        ([], [])     -> EQ
+        ([], _)      -> GT
+        (_, [])      -> LT
+        (x:xs, y:ys) -> orderBy (compareMultTerm (makeMultTerm x) (makeMultTerm y)) (compareProduct xs ys)
 
 -- Normalizes everything to an Exp expression for comparison within a Mult expression.
 makeMultTerm :: CommutativeRing r => VarExpression r v -> (VarExpression r v, Integer)
@@ -297,7 +303,7 @@ compareExpTerm e f =
         (Var x, Var y)     -> compare x y
         (Var _, _)         -> LT
         (_, Var _)         -> GT
-        (Add m x, Add n y) -> compareAddTerm (m, x) (n, y)
+        (Add m x, Add n y) -> compareAddTerm False (m, x) (n, y)
 
 
 
