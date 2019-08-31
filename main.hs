@@ -247,16 +247,15 @@ ut = putStrLn $ unitTest 0 0 testExpressions
                        in  if expected == actual
                               then unitTest f (s+1) us
                               else "Failed test: Expected: \""
-                                   ++ expected
+                                   ++ replaceOddChars expected
                                    ++ "\" Actual: \""
-                                   ++ actual
+                                   ++ replaceOddChars actual
                                    ++ "\" Input: \""
-                                   ++ input
+                                   ++ replaceOddChars input
                                    ++ "\"\n"
                                    ++ unitTest (f+1) s us
 
         -- (Input, Transformation function, Expected)
-        -- For copy-pasting: ⁰¹²³⁴⁵⁶⁷⁸⁹
         testExpressions =
             [
             -- Exponents
@@ -343,3 +342,18 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         pmult p q = multPoly [p, q]
         pexp = swap expPoly
         pdiv = swap divPoly
+
+        -- Because WinGHCi cannot show these characters.
+        replaceOddChars [] = []
+        replaceOddChars (x:xs) = replaceOddChar x ++ replaceOddChars xs
+
+        replaceOddChar '⁰' = "^0"
+        replaceOddChar '⁴' = "^4"
+        replaceOddChar '⁵' = "^5"
+        replaceOddChar '⁶' = "^6"
+        replaceOddChar '⁷' = "^7"
+        replaceOddChar '⁸' = "^8"
+        replaceOddChar '⁹' = "^9"
+
+        replaceOddChar '∙' = "*"
+        replaceOddChar x   = [x]
