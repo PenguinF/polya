@@ -186,10 +186,11 @@ multPoly ps =
     where
         -- x^m * x^n -> x^(m+n)
         combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (\x -> \y -> GT) (map makeMultTerm es), d)
-        combineGroupedMultTerms ts _ =
-            case ts of
+        combineGroupedMultTerms t [] =
+            case t of
                 (e, n) | n == 1 -> [e]
                 (e, n)          -> [Exp e n]
+        combineGroupedMultTerms (e, n) ((_, n2) : ts) = combineGroupedMultTerms (e, n + n2) ts
 
 -- Distributes an exponent over a product.
 -- (xy)^n -> x^n * y^n
