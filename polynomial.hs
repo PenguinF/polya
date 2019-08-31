@@ -185,7 +185,7 @@ multPoly ps =
         (product, es, d)                      -> Expr (Mult product es) d
     where
         -- x^m * x^n -> x^(m+n)
-        combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms compareMultTerm (map makeMultTerm es), d)
+        combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (compareMultTerm True) (map makeMultTerm es), d)
         combineGroupedMultTerms t [] =
             case t of
                 (e, n) | n == 1 -> [e]
@@ -281,7 +281,7 @@ compareProduct xs ys =
         ([], [])     -> EQ
         ([], _)      -> GT
         (_, [])      -> LT
-        (x:xs, y:ys) -> orderBy (compareMultTerm (makeMultTerm x) (makeMultTerm y)) (compareProduct xs ys)
+        (x:xs, y:ys) -> orderBy (compareMultTerm False (makeMultTerm x) (makeMultTerm y)) (compareProduct xs ys)
 
 -- Normalizes everything to an Exp expression for comparison within a Mult expression.
 makeMultTerm :: CommutativeRing r => VarExpression r v -> (VarExpression r v, Integer)
@@ -292,8 +292,11 @@ makeMultTerm e =
 
 -- Compares two terms of a Mult expression. 'Lesser' terms go in front.
 -- Assume by induction on structure that subexpressions are normalized already.
-compareMultTerm :: (CommutativeRing r, Ord r, Ord v) => (VarExpression r v, Integer) -> (VarExpression r v, Integer) -> Ordering
-compareMultTerm (x, m) (y, n) = orderBy (compareExpTerm x y) (desc $ compare m n)
+compareMultTerm :: (CommutativeRing r, Ord r, Ord v) => Bool -> (VarExpression r v, Integer) -> (VarExpression r v, Integer) -> Ordering
+compareMultTerm ignoreCoefficient (x, m) (y, n) =
+    case ignoreCoefficient of
+        False -> orderBy (compareExpTerm x y) (compare n m)
+        True  -> compareExpTerm x y
 
 -- Compares two terms of an Exp expression. 'Lesser' terms go in front.
 -- Assume by induction on structure that subexpressions are normalized already.
