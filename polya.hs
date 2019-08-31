@@ -3,7 +3,8 @@ module Eutherion.Polya (
        PolyaGroup,
        makePolyaGroup,
        cayleyTable,
-       characteristic
+       characteristic,
+       expandCharacteristic
 
        ) where
 
@@ -12,6 +13,7 @@ import Data.List
 
 import Eutherion.Utilities
 import Eutherion.Combinatorics
+import Eutherion.CommutativeRing
 import Eutherion.Polynomial
 
 -- Encapsulates a list of elements, and a list of symmetry operations acting on those elements.
@@ -108,3 +110,12 @@ characteristic (PolyaGroup slots symmetries) cs =
                 -- Choose independent values for all orbits of one symmetry operation,
                 -- then multiply by the number of symmetries which share the same set of orbit lengths.
                 valuesForAllOrbits orbits orbitGroup = [multPoly (makeConst (toInteger (1 + length orbitGroup)) : (groupAndSort multipleIndependentValues compare orbits))]
+
+
+-- Example usage:
+-- > expandCharacteristic $ characteristic (sqBoardPolyaGroup 3) "exo"
+-- (8e^9 + 24e^8o + 24e^8x + 64e^7o^2 + 96e^7ox + 64e^7x^2 + 128e^6o^3 + 304e^6o^2x + 304e^6ox^2 + 128e^6x^3 + 184e^5o^4 + 576e^5o^3x + 864e^5o^2x^2 + 576e^5ox^3 + 184e^5x^4 + 184e^4o^5 + 712e^4o^4x + 1392e^4o^3x^2 + 1392e^4o^2x^3 + 712e^4ox^4 + 184e^4x^5 + 128e^3o^6 + 576e^3o^5x + 1392e^3o^4x^2 + 1824e^3o^3x^3 + 1392e^3o^2x^4 + 576e^3ox^5 + 128e^3x^6 + 64e^2o^7 + 304e^2o^6x + 864e^2o^5x^2 + 1392e^2o^4x^3 + 1392e^2o^3x^4 + 864e^2o^2x^5 + 304e^2ox^6 + 64e^2x^7 + 24eo^8 + 96eo^7x + 304eo^6x^2 + 576eo^5x^3 + 712eo^4x^4 + 576eo^3x^5 + 304eo^2x^6 + 96eox^7 + 24ex^8 + 8o^9 + 24o^8x + 64o^7x^2 + 128o^6x^3 + 184o^5x^4 + 184o^4x^5 + 128o^3x^6 + 64o^2x^7 + 24ox^8 + 8x^9) / 8
+-- > expandCharacteristic $ characteristic (graphPolyaGroup 4) ".x"
+-- (24.^6 + 24.^5x + 48.^4x^2 + 72.^3x^3 + 48.^2x^4 + 24.x^5 + 24x^6) / 24
+expandCharacteristic :: (CommutativeRing a, Ord a, Ord b) => (a, Polynomial a b) -> Polynomial a b
+expandCharacteristic (n, e) = divPoly (expand e) n
