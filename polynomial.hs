@@ -139,7 +139,11 @@ addPoly ps =
         (sum, es, d)                  -> Expr (Add sum es) d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
-        combineSum (sum, es, d) = (sum, es, d)
+        combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (\x -> \y -> GT) (map makeAddTerm es), d)
+        combineGroupedAddTerms ts _ =
+            case ts of
+                (k, [e]) | k == r_one  -> [e]
+                (k, es)                -> [Mult k es]
 
 -- Extracts all constants and embedded Mult expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
@@ -179,7 +183,11 @@ multPoly ps =
         (product, es, d)                      -> Expr (Mult product es) d
     where
         -- x^m * x^n -> x^(m+n)
-        combineProduct (product, es, d) = (product, es, d)
+        combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (\x -> \y -> GT) (map makeMultTerm es), d)
+        combineGroupedMultTerms ts _ =
+            case ts of
+                (e, n) | n == 1 -> [e]
+                (e, n)          -> [Exp e n]
 
 -- Distributes an exponent over a product.
 -- (xy)^n -> x^n * y^n
@@ -271,7 +279,7 @@ makeMultTerm :: CommutativeRing r => VarExpression r v -> (VarExpression r v, In
 makeMultTerm e =
     case e of
         Exp e n -> (e, n)
-        e       -> (e, r_one)
+        e       -> (e, 1)
 
 -- Compares two terms of a Mult expression. 'Lesser' terms go in front.
 -- Assume by induction on structure that subexpressions are normalized already.
