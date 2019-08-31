@@ -273,8 +273,10 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("(2xy)^5",       id, "32x⁵y⁵"),
             ("2xy^5",         id, "2xy⁵"),
             ("-(2x^2y)^4",    id, "-16x⁸y⁴"),
+            ("(-2x^2y)^4",    id, "16x⁸y⁴"),
             ("(2x^2y(-1))^4", id, "16x⁸y⁴"),
             ("(x^5+y)^2",     id, "(x⁵ + y)²"),
+            ("(x^5+y)^2^3",   id, "(x⁵ + y)⁶"),
 
             -- Multiplication
             ("(1 (2∙3) 4) 5", id, "120"),
@@ -282,7 +284,7 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("1x",            id, "x"),
             ("10x",           id, "10x"),
             ("-x∙3",          id, "-3x"),
-            ("y(-xz)∙3",      id, "-3yxz"),
+            ("y(-xz)∙3",      id, "-3xyz"),
 
             -- Addition
             ("(1 + (2+3) + 4) + 5", id, "15"),
@@ -295,7 +297,7 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("--4 -+-5",            id, "9"),
             ("-+4 +--5",            id, "1"),
             ("-4 - x(5 - 2)",       id, "-3x - 4"),
-            ("-y+x",                id, "-y + x"),
+            ("-y+x",                id, "x - y"),
             ("1 - x(5 - 2y)",       id, "-x(-2y + 5) + 1"),
             ("1 - x5 - 2y",         id, "-5x - 2y + 1"),
 
@@ -327,7 +329,52 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x+2",        substituteVar 'x' (makeConst 0), "2"),
             ("2x",         substituteVar 'x' (makeConst 0), "0"),
             ("2xy+x-3",    substituteVar 'x' (makeConst 3), "6y"),
-            ("(x-3)(x+y)", substituteVar 'x' (makeConst 2), "-(y + 2)"),
+            ("(x-3)(x+y)", substituteVar 'x' (makeConst 2), "-y - 2"),
+
+            -- Distribution of constants over sums
+            ("3(x + 2)",          id,     "3x + 6"),
+            ("3(x + 2)",          pdiv 2, "(3x + 6) / 2"),
+            ("3(x + y)",          id,     "3x + 3y"),
+            ("-(x - y)",          id,     "-x + y"),
+            ("-(2x - 2y)",        id,     "-2x + 2y"),
+            ("-(2x - (y-z))",     id,     "-2x + y - z"),
+            ("-(2x - (-y+z))",    id,     "-2x - y + z"),
+            ("-(2x + (-y+z))",    id,     "-2x + y - z"),
+            ("-2(-2x + 3(y+2z))", id,     "4x - 6y - 12z"),
+            ("-2(-2x + y(y+2z))", id,     "4x - 2y(y + 2z)"),
+            ("-y(-2x - 3(y-2z))", id,     "-y(-2x - 3y + 6z)"),
+
+            -- Ordering and grouping
+            ("3x + xx",               id, "x² + 3x"),
+            ("y + x",                 id, "x + y"),
+            ("yx",                    id, "xy"),
+            ("1 + y^2 + x",           id, "x + y² + 1"),
+            ("xx^2x",                 id, "x⁴"),
+            ("yx^2xy^2x",             id, "x⁴y³"),
+            ("(y+x)(x+y)",            id, "(x + y)²"),
+            ("(y+x)^2(x+y)",          id, "(x + y)³"),
+            ("(y+x^2)(x^2+y)",        id, "(x² + y)²"),
+            ("(2x+1)^2 * (3x+1)^2",   id, "(3x + 1)²(2x + 1)²"),
+            ("(2x+1)^2 + (3x+1)^2",   id, "(3x + 1)² + (2x + 1)²"),
+            -- Expand scalar * add expressions.
+            ("3(y+x)+4(x+y)",          id, "7x + 7y"),
+            ("6(y+x)+1(x+y)",          id, "7x + 7y"),
+            ("6(z+x)+y+z+x",           id, "7x + y + 7z"),
+            ("6(z+x)+2(x+y)+y+z+x",    id, "9x + 3y + 7z"),
+            ("4y²-7(x-y)+x²-1",        id, "x² - 7x + 4y² + 7y - 1"),
+            -- Complex grouping.
+            ("(x^2+y)^2 + 2(x+y^2)^3", id, "(x² + y)² + 2(x + y²)³"),
+            ("2(x+y^2)^3 + (x^2+y)^2", id, "(x² + y)² + 2(x + y²)³"),
+            ("(x+y^2)^3 + 2(x^2+y)^2", id, "2(x² + y)² + (x + y²)³"),
+            ("(x^2+y)^2 + 2(x+y^2)^2", id, "(x² + y)² + 2(x + y²)²"),
+            ("2(x^2+y)^2 + (x+y^2)^2", id, "2(x² + y)² + (x + y²)²"),
+            ("y(x^2+z) + y^2",         id, "y² + y(x² + z)"),
+            ("y^2 + (z+x^2)y",         id, "y² + y(x² + z)"),
+            ("(x+1)^2 * (x+2)^2",      id, "(x + 2)²(x + 1)²"),
+            ("(x+1)^2 * (2+x)^2",      id, "(x + 2)²(x + 1)²"),
+            ("(x+1)^2 * (1+x)^2",      id, "(x + 1)⁴"),
+            ("x(x^2+1) + x(1+x^3)",    id, "x(x³ + 1) + x(x² + 1)"),
+            ("(4x²+6)³ + 2(2*3+5x*x-x²)(2³+(x(3x+x))-0y-2)²", id, "3(4x² + 6)³"),
 
             -- Basic parse tests.
             (" 0 ", id, "0"),
