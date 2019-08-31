@@ -193,7 +193,7 @@ expPoly p n
     | otherwise =
         case p of
             Const c d          -> Const (c `r_exp` n) (d `r_exp` n)
-            Expr (Exp e n') d  -> Expr (Exp e (n `r_mult` n')) (d `r_exp` n)
+            Expr (Exp e n') d  -> Expr (Exp e (n * n')) (d `r_exp` n)
             Expr (Mult k es) d -> divPoly (distributeExponent k es n) (d `r_exp` n)
             Expr e d           -> Expr (Exp e n) (d `r_exp` n)
 
