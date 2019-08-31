@@ -169,7 +169,7 @@ distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [C
 multPoly :: CommutativeRing r => [Polynomial r v] -> Polynomial r v
 multPoly ps =
     case extractConstantsAndMultOperands ps of
-        (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x'.
+        (product, [], d)                      -> Const product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
         (product, es, d)  | product == r_zero -> Const r_zero r_one
         (product, [e], d) | product == r_one  -> Expr e d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
