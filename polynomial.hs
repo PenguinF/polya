@@ -10,6 +10,7 @@ module Eutherion.Polynomial (
        multPoly,
        expPoly,
        divPoly,
+       eliminateDivisor,
 
        substituteVar,
        substitute,
@@ -231,6 +232,20 @@ divPoly p d
         case p of
             Const c d' -> makeRational c (d `r_mult` d')
             Expr e d'  -> Expr e (d `r_mult` d')
+
+-- Hack function in case you're sure division will be exact and not yield null Mult expressions.
+eliminateDivisor :: (CommutativeRing r, Integral r, Ord v) => Polynomial r v -> Polynomial r v
+eliminateDivisor p =
+    case p of
+        Const c d          -> Const (c `div` d) r_one
+        Expr (Add k es) d  -> addPoly ((makeConst (k `div` d)) : map (divAddTerm d) es)
+        Expr e d           -> divAddTerm d e
+    where
+        divAddTerm :: (CommutativeRing r, Integral r) => r -> VarExpression r v -> Polynomial r v
+        divAddTerm d e =
+            case e of
+                Mult k es -> Expr (Mult (k `div` d) es) r_one  -- This violates the invariants if k < d.
+                e         -> Expr e d
 
 
 
