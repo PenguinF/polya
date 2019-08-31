@@ -303,7 +303,15 @@ compareExpTerm e f =
         (Var x, Var y)     -> compare x y
         (Var _, _)         -> LT
         (_, Var _)         -> GT
-        (Add m x, Add n y) -> compareAddTerm False (m, x) (n, y)
+        (Add m x, Add n y) -> orderBy (compareSum x y) (compare n m)
+
+compareSum :: (CommutativeRing r, Ord r, Ord v) => [VarExpression r v] -> [VarExpression r v] -> Ordering
+compareSum xs ys =
+    case (xs, ys) of
+        ([], [])     -> EQ
+        ([], _)      -> GT
+        (_, [])      -> LT
+        (x:xs, y:ys) -> orderBy (compareAddTerm False (makeAddTerm x) (makeAddTerm y)) (compareSum xs ys)
 
 
 
