@@ -108,6 +108,8 @@ sqBoardPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (SquareBoardCoord
 sqBoardPolyaGroup n =
     makePolyaGroup [SquareBoardCoordinate x y | x <- [0..n - 1], y <- [0..n - 1]] (enumBoardSymmetryOperations (squareBoard n))
 
+characteristicPolynomial x y = eliminateDivisor $ expandCharacteristic $ characteristic x y
+
 
 
 
