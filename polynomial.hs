@@ -24,6 +24,7 @@ module Eutherion.Polynomial (
 
 import Eutherion.Utilities
 import Eutherion.CommutativeRing
+import Eutherion.Combinatorics
 
 
 -- Polynomials on arbitrary commutative rings, with a divisor.
@@ -329,8 +330,165 @@ compareSum xs ys =
 
 
 -- Expand function
+
+-- This helper type normalizes polynomials for the expand function.
+-- constant c + any (constant k * any (variable x to the power n))
+-- c + ∑ k[i] ∏ x[ij]^n[ij])
+-- where all k[i] /= 0, all n[ij] > 0.
+type NormVar v       = (v, Integer)
+type NormProduct r v = (r, [NormVar v])
+type NormSum r v     = (r, [NormProduct r v])
+
+-- Multiplies a non-empty list of products.
+multiplyProducts :: (CommutativeRing r, Ord v) => r -> [NormProduct r v] -> NormProduct r v
+multiplyProducts c ps =
+    case ps of
+        [] -> (c, [])  -- Scalar product.
+        ps -> let (k, bigProduct) = foldr multiplyProduct (head ps) (tail ps)
+                  sortedProduct   = groupAndSort combineGroupedVars groupByNormVar bigProduct
+              in  (c `r_mult` k, sortedProduct)
+    where
+        combineGroupedVars :: NormVar v -> [NormVar v] -> [NormVar v]
+        combineGroupedVars (x, m) xs =
+            case xs of
+                []            -> [(x, m)]
+                (y, n) : vars -> combineGroupedVars (x, m + n) vars
+
+        multiplyProduct :: CommutativeRing r => NormProduct r v -> NormProduct r v -> NormProduct r v
+        multiplyProduct (k1, vars1) (k2, vars2) = (k1 `r_mult` k2, [(x, n) | (x, n) <- vars1 ++ vars2])
+
+        -- Group by variable name (in ascending order).
+        groupByNormVar :: Ord v => NormVar v -> NormVar v -> Ordering
+        groupByNormVar (x, _) (y, _) = compare x y
+
+gatherScalars :: CommutativeRing r => [NormProduct r v] -> (r, [NormProduct r v])
+gatherScalars products =
+    case products of
+        []               -> (r_zero, [])
+        (k, []):products -> let (n, ps) = gatherScalars products
+                            in  (k `r_add` n, ps)
+        p:products       -> let (n, ps) = gatherScalars products
+                            in  (n, p:ps)
+
+expandPower :: (CommutativeRing r, Ord v) => NormSum r v -> Integer -> NormSum r v
+expandPower x 1 = x
+expandPower (c, products) n =
+    case (c, products) of
+        (c, [])                      -> (c `r_exp` n, [])
+        (c, [product]) | c == r_zero -> (r_zero, [distributeExponent' (n, product)])
+        (c, products)  | c == r_zero -> expandPowerOfSumZero products n
+        (c, products)                -> expandPowerOfSum (c, products) n
+    where
+        nonZeroExponent :: (Eq a, Num a) => (a, b) -> Bool
+        nonZeroExponent (k, _) =
+            case k of
+                0 -> False
+                _ -> True
+
+        -- Distributes exponent n over all terms in a product.
+        distributeExponent' :: CommutativeRing r => (Integer, NormProduct r v) -> NormProduct r v
+        distributeExponent' (1, (k, vars)) = (k, vars)
+        distributeExponent' (n, (k, vars)) = (k `r_exp` n, [(x, m `r_mult` n) | (x, m) <- vars])
+
+        -- Raises a sum with a zero constant value to some power and expands it.
+        expandPowerOfSumZero :: (CommutativeRing r, Ord v) => [NormProduct r v] -> Integer -> NormSum r v
+        expandPowerOfSumZero products n = gatherScalars $ map getExpansionTerm $ choose products n
+            where
+                getExpansionTerm :: (CommutativeRing r, Ord v) => (Integer, [(Integer, NormProduct r v)]) -> NormProduct r v
+                getExpansionTerm (coefficient, terms) =
+                    let multiplier = r_ones coefficient
+                    in  multiplyProducts multiplier $ map distributeExponent' $ filter nonZeroExponent terms
+
+        expandPowerOfSum :: (CommutativeRing r, Ord v) => NormSum r v -> Integer -> NormSum r v
+        expandPowerOfSum (c, products) n = gatherScalars $ map getExpansionTerm $ choose (map right products ++ [Left c]) n
+            where
+                right x = Right x
+                unright (k, Right x) = (k, x)
+
+                getExpansionTerm :: (CommutativeRing r, Ord v) => (Integer, [(Integer, Either r (NormProduct r v))]) -> NormProduct r v
+                getExpansionTerm (coefficient, varTerms) =
+                    let (initTerms, (k, Left c)) = initLast varTerms
+                        multiplier               = (r_ones coefficient) `r_mult` (c `r_exp` k)
+                    in  multiplyProducts multiplier $ map distributeExponent' $ filter nonZeroExponent $ map unright initTerms
+
+                -- Split a non-empty list into an initial part and a last element.
+                initLast :: [a] -> ([a], a)
+                initLast [x]    = ([], x)
+                initLast (x:xs) = let (ys, y) = initLast xs in (x:ys, y)
+
+expandProduct :: (CommutativeRing r, Ord r, Ord v) => [NormSum r v] -> NormSum r v
+expandProduct sums = foldr multiplySum (head sums) (tail sums)
+    where
+        multiplySum :: (CommutativeRing r, Ord r, Ord v) => NormSum r v -> NormSum r v -> NormSum r v
+        multiplySum (c, x) (d, y) =
+            -- Use addSums and multiplyProducts to sort and combine terms.
+            let cy = if c == r_zero then [] else [(c `r_mult` k, vs) | (k, vs) <- y]
+                dx = if d == r_zero then [] else [(d `r_mult` k, vs) | (k, vs) <- x]
+            in  addSums ((c `r_mult` d, cy ++ dx) : [gatherScalars [multiplyProducts r_one [p, q] | p <- x, q <- y]])
+
+addSums :: (CommutativeRing r, Ord r, Ord v) => [NormSum r v] -> NormSum r v
+addSums sums =
+    let (c, bigSum) = foldr addSum (head sums) (tail sums)
+        sortedSum   = groupAndSort combineGroupedProducts groupByNormProduct bigSum
+    in  (c, sortedSum)
+    where
+        combineGroupedProducts :: CommutativeRing r => NormProduct r v -> [NormProduct r v] -> [NormProduct r v]
+        combineGroupedProducts (k1, vars1) xs =
+            case xs of
+                [] | k1 == r_zero      -> []
+                   | otherwise         -> [(k1, vars1)]
+                (k2, vars2) : products -> combineGroupedProducts (k1 `r_add` k2, vars1) products
+
+        addSum :: (CommutativeRing r, Ord v) => NormSum r v -> NormSum r v -> NormSum r v
+        addSum (c, x) (d, y) = (c `r_add` d, x ++ y)
+
+        -- Group by variable name (in ascending order), then exponent (in descending order).
+        -- Assumes NormProducts are already sorted by using groupByNormVar.
+        groupByNormProduct :: (CommutativeRing r, Ord v) => NormProduct r v -> NormProduct r v -> Ordering
+        groupByNormProduct (_, vars1) (_, vars2) = groupByVars vars1 vars2
+            where
+                groupByVars :: Ord v => [NormVar v] -> [NormVar v] -> Ordering
+                groupByVars vars1 vars2 =
+                    case (vars1, vars2) of
+                        ([], [])                     -> EQ
+                        ([], _)                      -> GT
+                        (_, [])                      -> LT
+                        ((x, m):vars1, (y, n):vars2) -> orderBy (compare x y) $ orderBy (compare n m) (groupByVars vars1 vars2)
+
+expandVarExpression :: (CommutativeRing r, Ord r, Ord v) => VarExpression r v -> NormSum r v
+expandVarExpression e =
+    case e of
+        Var x     -> (r_zero, [(r_one, [(x, 1)])])
+        Exp e n   -> expandPower (expandVarExpression e) n
+        Mult c es -> let (k, ps) = expandProduct (map expandVarExpression es)
+                     in  (c `r_mult` k, [(c `r_mult` p, v) | (p, v) <- ps])
+        Add c es  -> let (k, ps) = addSums (map expandVarExpression es)
+                     in  (c `r_add` k, ps)
+
+convertNormSumToExpression :: CommutativeRing r => NormSum r v -> r -> Polynomial r v
+convertNormSumToExpression (c, products) d =
+    case (c, products) of
+        (c, [])                      -> makeRational c d
+        (c, [product]) | c == r_zero -> Expr (convertNormProductToExpression product) d
+        (c, products)                -> Expr (Add c (map convertNormProductToExpression products)) d
+    where
+        convertNormProductToExpression :: CommutativeRing r => NormProduct r v -> VarExpression r v
+        convertNormProductToExpression (k, vars) =
+            case (k, vars) of
+                (k, [var]) | k == r_one -> convertNormVarToExpression var
+                (n, vars)               -> Mult n (map convertNormVarToExpression vars)
+
+        convertNormVarToExpression :: NormVar v -> VarExpression r v
+        convertNormVarToExpression x =
+            case x of
+                (x, 1) -> Var x
+                (x, n) -> Exp (Var x) n
+
 expand :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Polynomial r v
-expand = id
+expand e =
+    case e of
+        Const n d -> Const n d
+        Expr e d  -> convertNormSumToExpression (expandVarExpression e) d
 
 
 
