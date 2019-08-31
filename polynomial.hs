@@ -13,6 +13,8 @@ module Eutherion.Polynomial (
        substituteVar,
        substitute,
 
+       expand,
+
        ShowablePolynomialVariable,
        showPoly,
        showPolynomial
@@ -315,6 +317,13 @@ compareSum xs ys =
         ([], _)      -> GT
         (_, [])      -> LT
         (x:xs, y:ys) -> orderBy (compareAddTerm False (makeAddTerm x) (makeAddTerm y)) (compareSum xs ys)
+
+
+
+
+-- Expand function
+expand :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Polynomial r v
+expand = id
 
 
 

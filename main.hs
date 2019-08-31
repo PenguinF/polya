@@ -376,6 +376,20 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x(x^2+1) + x(1+x^3)",    id, "x(x³ + 1) + x(x² + 1)"),
             ("(4x²+6)³ + 2(2*3+5x*x-x²)(2³+(x(3x+x))-0y-2)²", id, "3(4x² + 6)³"),
 
+            -- Expand
+            ("(a+b)²",               expand, "a² + 2ab + b²"),
+            ("(a + b)(a - b)",       expand, "a² - b²"),
+            ("(a - b + c)(a + b)",   expand, "a² + ac - b² + bc"),
+            ("(x + 4)(x - 2)",       expand, "x² + 2x - 8"),
+            ("(a^2+2ab+b^2)(2a-b)",  expand, "2a³ + 3a²b - b³"),
+            ("(2a^2+2ab+b^2)(2a-b)", expand, "4a³ + 2a²b - b³"),
+            ("(a+1)^2",              expand, "a² + 2a + 1"),
+            ("(1-a)^3",              expand, "-a³ + 3a² - 3a + 1"),
+            -- The characteristic polynomial for all tic-tac-toe symmetries:
+            ("(e+x+c)⁹ + 4(e+x+c)³(e²+x²+c²)³ + 2(e+x+c)(e⁴+x⁴+c⁴)² + (e+x+c)(e²+x²+c²)⁴",
+             expand,
+             "8c⁹ + 24c⁸e + 24c⁸x + 64c⁷e² + 96c⁷ex + 64c⁷x² + 128c⁶e³ + 304c⁶e²x + 304c⁶ex² + 128c⁶x³ + 184c⁵e⁴ + 576c⁵e³x + 864c⁵e²x² + 576c⁵ex³ + 184c⁵x⁴ + 184c⁴e⁵ + 712c⁴e⁴x + 1392c⁴e³x² + 1392c⁴e²x³ + 712c⁴ex⁴ + 184c⁴x⁵ + 128c³e⁶ + 576c³e⁵x + 1392c³e⁴x² + 1824c³e³x³ + 1392c³e²x⁴ + 576c³ex⁵ + 128c³x⁶ + 64c²e⁷ + 304c²e⁶x + 864c²e⁵x² + 1392c²e⁴x³ + 1392c²e³x⁴ + 864c²e²x⁵ + 304c²ex⁶ + 64c²x⁷ + 24ce⁸ + 96ce⁷x + 304ce⁶x² + 576ce⁵x³ + 712ce⁴x⁴ + 576ce³x⁵ + 304ce²x⁶ + 96cex⁷ + 24cx⁸ + 8e⁹ + 24e⁸x + 64e⁷x² + 128e⁶x³ + 184e⁵x⁴ + 184e⁴x⁵ + 128e³x⁶ + 64e²x⁷ + 24ex⁸ + 8x⁹"),
+
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
