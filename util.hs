@@ -12,7 +12,8 @@ module Eutherion.Utilities (
        conditionalElem,
        listToSimpleArray,
        joinList,
-       desc
+       desc,
+       groupAndSort
 
        ) where
 
@@ -108,3 +109,26 @@ desc :: Ordering -> Ordering
 desc LT = GT
 desc EQ = EQ
 desc GT = LT
+
+-- Allows quick-sorting with a custom function to deal with groups of equal elements.
+groupAndSort :: (a -> [a] -> [b])     -- Function applied on a pivot element and all other elements from the list equal to it,
+                                      -- which returns a list of result elements to add between smaller and greater elements.
+             -> (a -> a -> Ordering)  -- Function to compare two elements.
+             -> [a]                   -- List of elements to group.
+             -> [b]                   -- Returns the sorted list of grouped elements.
+groupAndSort _ _ [] = []
+groupAndSort fn cmp (pivot:xs) =
+    let (smaller, equal, greater) = pivotForQSort cmp pivot xs
+    in  groupAndSort fn cmp smaller
+        ++ fn pivot equal
+        ++ groupAndSort fn cmp greater
+    where
+        -- Divides a list into three based on a pivot element and a custom ordering function on its elements.
+        pivotForQSort :: (a -> b -> Ordering) -> b -> [a] -> ([a], [a], [a])
+        pivotForQSort _ _ [] = ([], [], [])
+        pivotForQSort cmp pivot (x:xs) =
+            let (smaller, equal, greater) = pivotForQSort cmp pivot xs
+            in  case cmp x pivot of
+                    LT -> (x:smaller, equal, greater)
+                    EQ -> (smaller, x:equal, greater)
+                    GT -> (smaller, equal, x:greater)
