@@ -140,10 +140,12 @@ addPoly ps =
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
         combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (\x -> \y -> GT) (map makeAddTerm es), d)
-        combineGroupedAddTerms ts _ =
-            case ts of
+        combineGroupedAddTerms t [] =
+            case t of
+                (k, es)  | k == r_zero -> []
                 (k, [e]) | k == r_one  -> [e]
                 (k, es)                -> [Mult k es]
+        combineGroupedAddTerms (k, es) ((k2, _) : ts) = combineGroupedAddTerms (k `r_add` k2, es) ts
 
 -- Extracts all constants and embedded Mult expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
