@@ -95,7 +95,7 @@ v^6 + v^5x + 2v^4x^2 + 3v^3x^3 + 2v^2x^4 + vx^5 + x^6
 -- Substituting 1 for each variable in this polynomial gives the correct answer, 11.
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 4) "xv") (\var -> mp "1")
 11
--- So, how many different non-isomorphic graphs are there for 5, or 6, or 7 vertices?
+-- So, how many different non-isomorphic graphs are there for 5, 6, or 7 vertices?
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 5) "xv") (\var -> mp "1")
 34
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 6) "xv") (\var -> mp "1")
