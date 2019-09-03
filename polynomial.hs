@@ -237,8 +237,10 @@ divPoly p d
     | d == r_zero = error "Division by zero"
     | otherwise   =
         case p of
-            Const c d' -> makeRational c (d `r_mult` d')
-            Expr e d'  -> Expr e (d `r_mult` d')
+            Const c d'          -> makeRational c (d `r_mult` d')
+            Expr (Mult k es) d' -> let (k', d'') = r_div_by_gcd k (d `r_mult` d')
+                                   in  Expr (Mult k' es) d''
+            Expr e d'           -> Expr e (d `r_mult` d')
 
 -- Hack function in case you're sure division will be exact and not yield null Mult expressions.
 eliminateDivisor :: (CommutativeRing r, Integral r, Ord v) => Polynomial r v -> Polynomial r v
