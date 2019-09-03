@@ -97,11 +97,7 @@ characteristic (PolyaGroup slots symmetries) cs =
         genExpression cs orbitGroups = addPoly $ groupAndSort valuesForAllOrbits compare orbitGroups
             where
                 -- Expression to choose one element out of cs for 'orbitLength' slots simultaneously (i.e. they are all the same).
-                singleChoice cs = addPoly [makeVar c | c <- cs]
-                multipleChoice orbitLength cs = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
-                selectOneValue orbitLength = case orbitLength of
-                    1           -> singleChoice
-                    orbitLength -> multipleChoice orbitLength
+                selectOneValue orbitLength cs = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
                 -- Expression to choose values for groups of slots with the same choice expression.
                 selectIndependentValues slotGroupCount choiceExpression = case slotGroupCount of
