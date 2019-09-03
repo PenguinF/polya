@@ -13,7 +13,8 @@ module Eutherion.CommutativeRing (
 
        r_gcd_div,
        r_gcd,
-       r_div_by_gcd
+       r_div_by_gcd,
+       gcd_integral
 
        ) where
 
@@ -84,6 +85,18 @@ r_div_by_gcd :: CommutativeRing a => a -> a -> (a, a)
 r_div_by_gcd x y = (qx, qy)
     where (gcd, qx, qy) = r_gcd_div x y
 
+-- Fast GCD function for integral types based on Euclid's algorithm
+-- which uses the mod function.
+gcd_integral :: Integral a => a -> a -> (a, a, a)
+gcd_integral x y =
+    let gcd = gcd_integral' (abs x) (abs y)
+    in  (gcd, x `div` gcd, y `div` gcd)
+    where
+        gcd_integral' x y
+            | y == 0    = x
+            | x < y     = gcd_integral' y x
+            | otherwise = gcd_integral' y (x `mod` y)
+
 
 instance CommutativeRing Integer where
     r_add        = (+)
@@ -95,6 +108,7 @@ instance CommutativeRing Integer where
     r_exp        = (^)
     r_isNegative = (< 0)
     r_abs        = abs
+    r_gcd_div    = gcd_integral
 
 instance CommutativeRing Int where
     r_add        = (+)
@@ -106,6 +120,7 @@ instance CommutativeRing Int where
     r_exp        = (^)
     r_isNegative = (< 0)
     r_abs        = abs
+    r_gcd_div    = gcd_integral
 
 instance CommutativeRing Bool where
     r_add False False = False
