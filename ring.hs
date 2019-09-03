@@ -64,14 +64,7 @@ class Eq a => CommutativeRing a where
 
     -- Finds the GCD of two elements using Euclid's algorithm.
     r_gcd :: a -> a -> a
-    r_gcd x y = r_gcd' (r_abs x) (r_abs y)
-        where
-            r_gcd' x y
-                | y == r_zero             = x
-                | r_isNegative difference = r_gcd' y x
-                | otherwise               = r_gcd' x y
-                where
-                    difference = r_add x (r_min y)
+    r_gcd x y = r_one
 
 instance CommutativeRing Integer where
     r_add        = (+)
