@@ -74,9 +74,9 @@ cayleyTable (PolyaGroup slots fns) =
 
 
 -- Returns the characteristic polynomial for a Pólya group and a number of choices represented by characters.
-characteristic :: (Eq a, Ord b) => PolyaGroup a -> [b] -> (Integer, Polynomial Integer b)
+characteristic :: (Eq a, Ord b) => PolyaGroup a -> [b] -> Polynomial Integer b
 characteristic (PolyaGroup slots symmetries) cs =
-    (toInteger $ length symmetries, genExpression cs $ choiceFunction orbitLengths)
+    divPoly (genExpression cs $ choiceFunction orbitLengths) (toInteger $ length symmetries)
     where
         -- For sqBoardPolyaGroup 3, orbitLengths has this value:
         -- [[1,1,1,1,1,1,1,1,1],[2,2,2,1,1,1,2,2,2],[2,1,2,2,1,2,2,1,2],[2,2,1,2,1,2,1,2,2],[1,2,2,2,1,2,2,2,1],[4,4,4,4,1,4,4,4,4],[2,2,2,2,1,2,2,2,2],[4,4,4,4,1,4,4,4,4]]
@@ -121,5 +121,5 @@ characteristic (PolyaGroup slots symmetries) cs =
 -- e^9 + 3e^8o + 3e^8x + 8e^7o^2 + 12e^7ox + 8e^7x^2 + 16e^6o^3 + 38e^6o^2x + 38e^6ox^2 + 16e^6x^3 + 23e^5o^4 + 72e^5o^3x + 108e^5o^2x^2 + 72e^5ox^3 + 23e^5x^4 + 23e^4o^5 + 89e^4o^4x + 174e^4o^3x^2 + 174e^4o^2x^3 + 89e^4ox^4 + 23e^4x^5 + 16e^3o^6 + 72e^3o^5x + 174e^3o^4x^2 + 228e^3o^3x^3 + 174e^3o^2x^4 + 72e^3ox^5 + 16e^3x^6 + 8e^2o^7 + 38e^2o^6x + 108e^2o^5x^2 + 174e^2o^4x^3 + 174e^2o^3x^4 + 108e^2o^2x^5 + 38e^2ox^6 + 8e^2x^7 + 3eo^8 + 12eo^7x + 38eo^6x^2 + 72eo^5x^3 + 89eo^4x^4 + 72eo^3x^5 + 38eo^2x^6 + 12eox^7 + 3ex^8 + o^9 + 3o^8x + 8o^7x^2 + 16o^6x^3 + 23o^5x^4 + 23o^4x^5 + 16o^3x^6 + 8o^2x^7 + 3ox^8 + x^9
 -- > expandCharacteristic $ characteristic (graphPolyaGroup 4) ".x"
 -- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
-expandCharacteristic :: (CommutativeRing a, Ord a, Integral a, Ord b) => (a, Polynomial a b) -> Polynomial a b
-expandCharacteristic (n, e) = eliminateDivisor $ divPoly (expand e) n
+expandCharacteristic :: (CommutativeRing a, Ord a, Integral a, Ord b) => Polynomial a b -> Polynomial a b
+expandCharacteristic = eliminateDivisor . expand
