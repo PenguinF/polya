@@ -38,7 +38,27 @@ Ok, six modules loaded.
 
 Example questions this code can answer for you:
 
-1) How many different non-isomorphic graphs exist on 4 vertices?
+1) How many different tic-tac-toe positions are there?
+```
+-- Show the expanded characteristic polynomial of the tic-tac-toe board group,
+-- in which an empty square is represented by an 'e', and non-empty squares by 'o' and 'x':
+*Main> characteristicPolynomial (sqBoardPolyaGroup 3) "exo"
+e^9 + 3e^8o + 3e^8x + 8e^7o^2 + 12e^7ox + 8e^7x^2 + 16e^6o^3 + 38e^6o^2x + 38e^6ox^2 + 16e^6x^3 + 23e^5o^4 + 72e^5o^3x + 108e^5o^2x^2 + 72e^5ox^3 + 23e^5x^4 + 23e^4o^5 + 89e^4o^4x + 174e^4o^3x^2 + 174e^4o^2x^3 + 89e^4ox^4 + 23e^4x^5 + 16e^3o^6 + 72e^3o^5x + 174e^3o^4x^2 + 228e^3o^3x^3 + 174e^3o^2x^4 + 72e^3ox^5 + 16e^3x^6 + 8e^2o^7 + 38e^2o^6x + 108e^2o^5x^2 + 174e^2o^4x^3 + 174e^2o^3x^4 + 108e^2o^2x^5 + 38e^2ox^6 + 8e^2x^7 + 3eo^8 + 12eo^7x + 38eo^6x^2 + 72eo^5x^3 + 89eo^4x^4 + 72eo^3x^5 + 38eo^2x^6 + 12eox^7 + 3ex^8 + o^9 + 3o^8x + 8o^7x^2 + 16o^6x^3 + 23o^5x^4 + 23o^4x^5 + 16o^3x^6 + 8o^2x^7 + 3ox^8 + x^9
+-- Simplify a bit by setting 'e' to 1:
+*Main> substituteVar 'e' (mp "1") $ characteristicPolynomial (sqBoardPolyaGroup 3) "exo"
+o^9 + 3o^8x + 3o^8 + 8o^7x^2 + 12o^7x + 8o^7 + 16o^6x^3 + 38o^6x^2 + 38o^6x + 16o^6 + 23o^5x^4 + 72o^5x^3 + 108o^5x^2 + 72o^5x + 23o^5 + 23o^4x^5 + 89o^4x^4 + 174o^4x^3 + 174o^4x^2 + 89o^4x + 23o^4 + 16o^3x^6 + 72o^3x^5 + 174o^3x^4 + 228o^3x^3 + 174o^3x^2 + 72o^3x + 16o^3 + 8o^2x^7 + 38o^2x^6 + 108o^2x^5 + 174o^2x^4 + 174o^2x^3 + 108o^2x^2 + 38o^2x + 8o^2 + 3ox^8 + 12ox^7 + 38ox^6 + 72ox^5 + 89ox^4 + 72ox^3 + 38ox^2 + 12ox + 3o + x^9 + 3x^8 + 8x^7 + 16x^6 + 23x^5 + 23x^4 + 16x^3 + 8x^2 + 3x + 1
+-- As there are no positions with e.g. 9 x's some terms can be eliminated. Let's assume that 'x' always gets
+-- the first turn. There's no straightforward way to loop over terms in an expression, but we can do it by
+-- hand using the 'mp' function, copy-pasting the polynomial above into it, and eliminating all illegal terms:
+*Main> mp "23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1"
+23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1
+-- To get our final answer, substitute the constant polynomial "1" for each variable again:
+*Main> substitute (mp "23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1") (\var -> mp "1")
+850
+*Main>
+```
+
+2) How many different non-isomorphic graphs exist on 4 vertices?
 ```
 -- Show the Cayley table representation of the graph group:
 *Main> cayleyTable $ graphPolyaGroup 4
@@ -80,25 +100,5 @@ v^6 + v^5x + 2v^4x^2 + 3v^3x^3 + 2v^2x^4 + vx^5 + x^6
 34
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 6) "xv") (\var -> mp "1")
 156
-*Main>
-```
-
-2) How many different tic-tac-toe positions are there?
-```
--- Show the expanded characteristic polynomial of the tic-tac-toe board group,
--- in which an empty square is represented by an 'e', and non-empty squares by 'o' and 'x':
-*Main> characteristicPolynomial (sqBoardPolyaGroup 3) "exo"
-e^9 + 3e^8o + 3e^8x + 8e^7o^2 + 12e^7ox + 8e^7x^2 + 16e^6o^3 + 38e^6o^2x + 38e^6ox^2 + 16e^6x^3 + 23e^5o^4 + 72e^5o^3x + 108e^5o^2x^2 + 72e^5ox^3 + 23e^5x^4 + 23e^4o^5 + 89e^4o^4x + 174e^4o^3x^2 + 174e^4o^2x^3 + 89e^4ox^4 + 23e^4x^5 + 16e^3o^6 + 72e^3o^5x + 174e^3o^4x^2 + 228e^3o^3x^3 + 174e^3o^2x^4 + 72e^3ox^5 + 16e^3x^6 + 8e^2o^7 + 38e^2o^6x + 108e^2o^5x^2 + 174e^2o^4x^3 + 174e^2o^3x^4 + 108e^2o^2x^5 + 38e^2ox^6 + 8e^2x^7 + 3eo^8 + 12eo^7x + 38eo^6x^2 + 72eo^5x^3 + 89eo^4x^4 + 72eo^3x^5 + 38eo^2x^6 + 12eox^7 + 3ex^8 + o^9 + 3o^8x + 8o^7x^2 + 16o^6x^3 + 23o^5x^4 + 23o^4x^5 + 16o^3x^6 + 8o^2x^7 + 3ox^8 + x^9
--- Simplify a bit by setting 'e' to 1:
-*Main> substituteVar 'e' (mp "1") $ characteristicPolynomial (sqBoardPolyaGroup 3) "exo"
-o^9 + 3o^8x + 3o^8 + 8o^7x^2 + 12o^7x + 8o^7 + 16o^6x^3 + 38o^6x^2 + 38o^6x + 16o^6 + 23o^5x^4 + 72o^5x^3 + 108o^5x^2 + 72o^5x + 23o^5 + 23o^4x^5 + 89o^4x^4 + 174o^4x^3 + 174o^4x^2 + 89o^4x + 23o^4 + 16o^3x^6 + 72o^3x^5 + 174o^3x^4 + 228o^3x^3 + 174o^3x^2 + 72o^3x + 16o^3 + 8o^2x^7 + 38o^2x^6 + 108o^2x^5 + 174o^2x^4 + 174o^2x^3 + 108o^2x^2 + 38o^2x + 8o^2 + 3ox^8 + 12ox^7 + 38ox^6 + 72ox^5 + 89ox^4 + 72ox^3 + 38ox^2 + 12ox + 3o + x^9 + 3x^8 + 8x^7 + 16x^6 + 23x^5 + 23x^4 + 16x^3 + 8x^2 + 3x + 1
--- As there are no positions with e.g. 9 x's some terms can be eliminated. Let's assume that 'x' always gets
--- the first turn. There's no straightforward way to loop over terms in an expression, but we can do it by
--- hand using the 'mp' function, copy-pasting the polynomial above into it, and eliminating all illegal terms:
-*Main> mp "23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1"
-23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1
--- To get our final answer, substitute the constant polynomial "1" for each variable again:
-*Main> substitute (mp "23o^4x^5 + 89o^4x^4 + 174o^3x^4 + 228o^3x^3 + 174o^2x^3 + 108o^2x^2 + 38ox^2 + 12ox + 3x + 1") (\var -> mp "1")
-850
 *Main>
 ```
