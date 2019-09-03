@@ -16,6 +16,7 @@ module Eutherion.Polynomial (
        substitute,
 
        expand,
+       coefficient,
 
        ShowablePolynomialVariable,
        showPoly,
@@ -504,6 +505,9 @@ expand e =
     case e of
         Const n d -> Const n d
         Expr e d  -> convertNormSumToExpression (expandVarExpression e) d
+
+coefficient :: (CommutativeRing r, Ord r, Ord v) => [(v, Integer)] -> Polynomial r v -> Polynomial r v
+coefficient vs = id
 
 
 

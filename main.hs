@@ -392,6 +392,37 @@ ut = putStrLn $ unitTest 0 0 testExpressions
              expand,
              "8c⁹ + 24c⁸e + 24c⁸x + 64c⁷e² + 96c⁷ex + 64c⁷x² + 128c⁶e³ + 304c⁶e²x + 304c⁶ex² + 128c⁶x³ + 184c⁵e⁴ + 576c⁵e³x + 864c⁵e²x² + 576c⁵ex³ + 184c⁵x⁴ + 184c⁴e⁵ + 712c⁴e⁴x + 1392c⁴e³x² + 1392c⁴e²x³ + 712c⁴ex⁴ + 184c⁴x⁵ + 128c³e⁶ + 576c³e⁵x + 1392c³e⁴x² + 1824c³e³x³ + 1392c³e²x⁴ + 576c³ex⁵ + 128c³x⁶ + 64c²e⁷ + 304c²e⁶x + 864c²e⁵x² + 1392c²e⁴x³ + 1392c²e³x⁴ + 864c²e²x⁵ + 304c²ex⁶ + 64c²x⁷ + 24ce⁸ + 96ce⁷x + 304ce⁶x² + 576ce⁵x³ + 712ce⁴x⁴ + 576ce³x⁵ + 304ce²x⁶ + 96cex⁷ + 24cx⁸ + 8e⁹ + 24e⁸x + 64e⁷x² + 128e⁶x³ + 184e⁵x⁴ + 184e⁴x⁵ + 128e³x⁶ + 64e²x⁷ + 24ex⁸ + 8x⁹"),
 
+            -- Coefficient (select only that part of the expanded polynomial
+            -- with a particular set of variables raised to some power)
+            ("-2",          coefficient [],                "-2"),
+            ("-2",          coefficient [('a',1)],         "0"),
+            ("(a+b)²",      coefficient [],                "0"),
+            ("(a+b)²",      coefficient [('a',1)],         "0"),
+            ("(a+b)²",      coefficient [('b',1)],         "0"),
+            ("(a+b)²",      coefficient [('a',1),('b',1)], "2ab"),
+            ("(a+b)²",      coefficient [('a',2)],         "a²"),
+            ("(a+b)²",      coefficient [('b',2)],         "b²"),
+            ("(a+3)⁴",      coefficient [],                "81"),
+            ("(a+3)⁴",      coefficient [('a',1)],         "108a"),
+            ("(a+3)⁴",      coefficient [('a',2)],         "54a²"),
+            ("(a+3)⁴",      coefficient [('a',3)],         "12a³"),
+            ("(a+3)⁴",      coefficient [('a',4)],         "a⁴"),
+            -- Ignore zero exponents.
+            ("(a+3)⁴",      coefficient [('a',0)],         "81"),
+            -- Correct handling of minuses which can make coefficients disappear.
+            ("(a+b)(a-b)",  coefficient [],                "0"),
+            ("(a+b)(a-b)",  coefficient [('a',1)],         "0"),
+            ("(a+b)(a-b)",  coefficient [('b',1)],         "0"),
+            ("(a+b)(a-b)",  coefficient [('a',1),('b',1)], "0"),
+            ("(a+b)(a-b)",  coefficient [('a',2)],         "a²"),
+            ("(a+b)(a-b)",  coefficient [('b',2)],         "-b²"),
+            ("-(a+b)(a-b)", coefficient [('b',2)],         "b²"),
+            -- Number of different positions with a single king on a chess board.
+            ("(k+1)⁶⁴",     coefficient [('k',1)],         "64k"),
+            -- Number of different positions with a single king on a chess board
+            -- taking symmetries into account.
+            ("2(k⁴+1)¹⁶ + 3(k²+1)³² + 2(k²+1)²⁸(k+1)⁸ + (k+1)⁶⁴", coefficient [('k',1)] . pdiv 8, "10k"),
+
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
