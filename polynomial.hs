@@ -93,7 +93,8 @@ makeConst c = Const c r_one
 makeRational :: CommutativeRing r => r -> r -> Polynomial r v
 makeRational c d
     | c == r_zero = polyZero
-    | otherwise   = Const c d
+    | otherwise   = let (c', d') = r_div_by_gcd c d
+                    in  Const c' d'
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Expr (Var x) r_one
