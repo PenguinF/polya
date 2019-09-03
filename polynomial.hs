@@ -3,6 +3,7 @@ module Eutherion.Polynomial (
        Polynomial,
        VarExpression,
 
+       polyZero,
        makeConst,
        makeRational,
        makeVar,
@@ -83,12 +84,15 @@ data VarExpression r v = Var v
 -- > addPoly [makeVar 'x', divPoly (makeConst 3) 4, divPoly (makeConst 4) 3]
 -- (12x + 25) / 12
 
+polyZero :: CommutativeRing r => Polynomial r v
+polyZero = Const r_zero r_one
+
 makeConst :: CommutativeRing r => r -> Polynomial r v
 makeConst c = Const c r_one
 
 makeRational :: CommutativeRing r => r -> r -> Polynomial r v
 makeRational c d
-    | c == r_zero = Const r_zero r_one
+    | c == r_zero = polyZero
     | otherwise   = Const c d
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
@@ -184,14 +188,14 @@ extractConstantsAndMultOperands es =
 --   = [12x + 6y + 18] mod 12
 --   = [6y + 6] mod 12
 distributeMultiplier :: (CommutativeRing r, Ord r, Ord v) => r -> r -> [VarExpression r v] -> Polynomial r v
-distributeMultiplier k c es = addPoly (Const (c `r_mult` k) r_one : [multPoly [Const k r_one, Expr e r_one] | e <- es])
+distributeMultiplier k c es = addPoly (makeConst (c `r_mult` k) : [multPoly [makeConst k, Expr e r_one] | e <- es])
 
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
 multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> makeRational product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
-        (product, es, d)  | product == r_zero -> Const r_zero r_one
+        (product, es, d)  | product == r_zero -> polyZero
         (product, [e], d) | product == r_one  -> Expr e d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
         (product, es, d)                      -> Expr (Mult product es) d
@@ -238,7 +242,7 @@ divPoly p d
 eliminateDivisor :: (CommutativeRing r, Integral r, Ord v) => Polynomial r v -> Polynomial r v
 eliminateDivisor p =
     case p of
-        Const c d          -> Const (c `div` d) r_one
+        Const c d          -> makeConst (c `div` d)
         Expr (Add k es) d  -> addPoly ((makeConst (k `div` d)) : map (divAddTerm d) es)
         Expr e d           -> divAddTerm d e
     where
@@ -619,7 +623,7 @@ instance Functor (Polynomial r) where
 
 -- Maybe require Ord b constraint rather than Eq b, like Set, so normalization is more efficient?
 instance (CommutativeRing a, Ord a, Ord b) => CommutativeRing (Polynomial a b) where
-    r_zero       = makeConst r_zero
+    r_zero       = polyZero
     r_one        = makeConst r_one
     r_add p q    = addPoly [p, q]
     r_mult p q   = multPoly [p, q]
