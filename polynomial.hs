@@ -492,15 +492,17 @@ expandVarExpression e =
 convertNormSumToExpression :: CommutativeRing r => NormSum r v -> r -> Polynomial r v
 convertNormSumToExpression (c, products) d =
     case (c, products) of
-        (c, [])                      -> makeRational c d
-        (c, [product]) | c == r_zero -> Expr (convertNormProductToExpression product) d
-        (c, products)                -> Expr (Add c (map convertNormProductToExpression products)) d
+        (c, [])                                       -> makeRational c d
+        (c, [(k, [var])]) | c == r_zero && k == r_one -> Expr (convertNormVarToExpression var) d
+        (c, [(k, vars)])  | c == r_zero               -> let (k', d') = r_div_by_gcd k d
+                                                         in  Expr (Mult k' (map convertNormVarToExpression vars)) d'
+        (c, products)                                 -> Expr (Add c (map convertNormProductToExpression products)) d
     where
         convertNormProductToExpression :: CommutativeRing r => NormProduct r v -> VarExpression r v
         convertNormProductToExpression (k, vars) =
             case (k, vars) of
                 (k, [var]) | k == r_one -> convertNormVarToExpression var
-                (n, vars)               -> Mult n (map convertNormVarToExpression vars)
+                (k, vars)               -> Mult k (map convertNormVarToExpression vars)
 
         convertNormVarToExpression :: NormVar v -> VarExpression r v
         convertNormVarToExpression x =
