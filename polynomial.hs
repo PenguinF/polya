@@ -199,7 +199,8 @@ multPoly ps =
         (product, es, d)  | product == r_zero -> polyZero
         (product, [e], d) | product == r_one  -> Expr e d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
-        (product, es, d)                      -> Expr (Mult product es) d
+        (product, es, d)                      -> let (product', d') = r_div_by_gcd product d
+                                                 in  Expr (Mult product' es) d'
     where
         -- x^m * x^n -> x^(m+n)
         combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (compareMultTerm True) (map makeMultTerm es), d)
