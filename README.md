@@ -60,7 +60,7 @@ o^9 + 3o^8x + 3o^8 + 8o^7x^2 + 12o^7x + 8o^7 + 16o^6x^3 + 38o^6x^2 + 38o^6x + 16
 
 2) How many different non-isomorphic graphs exist on 4 vertices?
 ```
--- Show the Cayley table representation of the graph group:
+-- Show the Cayley table representation of the graph group.
 *Main> cayleyTable $ graphPolyaGroup 4
     | 1 b c d e f g h i j k l m n o p q r s t u v w x | ~
   --+-------------------------------------------------+---
@@ -89,16 +89,18 @@ o^9 + 3o^8x + 3o^8 + 8o^7x^2 + 12o^7x + 8o^7 + 16o^6x^3 + 38o^6x^2 + 38o^6x + 16
   w | w h t n k q r b s x e m l d v u f g i c p o 1 j | w
   x | x i u o l r q d v w c p k b s t 1 j h e m n f g | q
 -- Show the expanded characteristic polynomial of this group,
--- in which non-present and present edges are represented by 'x' and 'v' respectively:
+-- in which non-present and present edges are represented by 'x' and 'v' respectively.
 *Main> characteristicPolynomial (graphPolyaGroup 4) "xv"
 v^6 + v^5x + 2v^4x^2 + 3v^3x^3 + 2v^2x^4 + vx^5 + x^6
 -- Substituting 1 for each variable in this polynomial gives the correct answer, 11.
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 4) "xv") (\var -> mp "1")
 11
--- So, how many different non-isomorphic graphs are there for 5, or 6 vertices?
+-- So, how many different non-isomorphic graphs are there for 5, or 6, or 7 vertices?
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 5) "xv") (\var -> mp "1")
 34
 *Main> substitute (characteristicPolynomial (graphPolyaGroup 6) "xv") (\var -> mp "1")
 156
+*Main> substitute (characteristicPolynomial (graphPolyaGroup 7) "xv") (\var -> mp "1")
+1044
 *Main>
 ```
