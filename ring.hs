@@ -10,7 +10,7 @@ module Eutherion.CommutativeRing (
        r_abs,
        r_ones,
        r_exp,
-       r_gcd
+       r_gcd_div
 
        ) where
 
@@ -62,9 +62,12 @@ class Eq a => CommutativeRing a where
         | n == 1    = x
         | otherwise = x `r_mult` (r_exp x (n - 1))
 
-    -- Finds the GCD of two elements using Euclid's algorithm.
-    r_gcd :: a -> a -> a
-    r_gcd x y = r_one
+    -- r_gcd_div x y returns a triple (gcd, x', y'), with properties:
+    -- gcd `r_mult` x' == x
+    -- gcd `r_mult` y' == y
+    -- gcd is the 'largest' element for which this is true.
+    r_gcd_div :: a -> a -> (a, a, a)
+    r_gcd_div x y = (r_one, x, y)
 
 instance CommutativeRing Integer where
     r_add        = (+)
