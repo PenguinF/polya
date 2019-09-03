@@ -100,9 +100,7 @@ characteristic (PolyaGroup slots symmetries) cs =
                 selectOneValue orbitLength cs = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
                 -- Expression to choose values for groups of slots with the same choice expression.
-                selectIndependentValues slotGroupCount choiceExpression = case slotGroupCount of
-                    1              -> choiceExpression
-                    slotGroupCount -> expPoly choiceExpression (toInteger slotGroupCount)
+                selectIndependentValues slotGroupCount choiceExpression = expPoly choiceExpression (toInteger slotGroupCount)
 
                 -- Choose independent values for a group of slots with the same orbit length.
                 multipleIndependentValues orbitLength grp = [selectIndependentValues (length grp + 1) (selectOneValue orbitLength cs)]
