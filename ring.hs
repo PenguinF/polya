@@ -10,10 +10,14 @@ module Eutherion.CommutativeRing (
        r_abs,
        r_ones,
        r_exp,
-       r_gcd_div
+
+       r_gcd_div,
+       r_gcd,
+       r_div_by_gcd
 
        ) where
 
+import Eutherion.Utilities
 
 -- Structures functions according to these laws:
 -- (x + y) + z === x + (y + z)
@@ -68,6 +72,18 @@ class Eq a => CommutativeRing a where
     -- gcd is the 'largest' element for which this is true.
     r_gcd_div :: a -> a -> (a, a, a)
     r_gcd_div x y = (r_one, x, y)
+
+
+-- Returns the GCD of two ring elements.
+r_gcd :: CommutativeRing a => a -> a -> a
+r_gcd x y = fst3 $ r_gcd_div x y
+
+-- 'Divides' two ring elements by their GCD.
+-- If one of them is 0 (r_zero), leaves the elements unchanged.
+r_div_by_gcd :: CommutativeRing a => a -> a -> (a, a)
+r_div_by_gcd x y = (qx, qy)
+    where (gcd, qx, qy) = r_gcd_div x y
+
 
 instance CommutativeRing Integer where
     r_add        = (+)
