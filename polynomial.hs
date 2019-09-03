@@ -511,7 +511,26 @@ expand e =
         Expr e d  -> convertNormSumToExpression (expandVarExpression e) d
 
 coefficient :: (CommutativeRing r, Ord r, Ord v) => [(v, Integer)] -> Polynomial r v -> Polynomial r v
-coefficient vs = id
+coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
+    where
+        groupByVar (x, _) (y, _) = compare x y
+
+        -- Leave out exponents equal to 0.
+        combineGroupedVar (x, m) []
+            | m == 0    = []
+            | otherwise = [(x, m)]
+        combineGroupedVar (x, m) ((_, n) : vs) = combineGroupedVar (x, m + n) vs
+
+        matchVar vs (_, ws) = vs == ws
+
+        coefficient' vs p =
+            case (vs, p) of
+                ([], Const c d) -> Const c d
+                (_,  Const _ _) -> polyZero
+                ([], Expr e d)  -> let (c, _) = expandVarExpression e
+                                   in  convertNormSumToExpression (c, []) d
+                (vs, Expr e d)  -> let (_, products) = expandVarExpression e
+                                   in  convertNormSumToExpression (r_zero, filter (matchVar vs) products) d
 
 
 
