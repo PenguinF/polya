@@ -108,8 +108,23 @@ sqBoardPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (SquareBoardCoord
 sqBoardPolyaGroup n =
     makePolyaGroup [SquareBoardCoordinate x y | x <- [0..n - 1], y <- [0..n - 1]] (enumBoardSymmetryOperations (squareBoard n))
 
+
+
+
+-- Shorthand functions.
 characteristicPolynomial x y = expandCharacteristic $ characteristic x y
 
+-- 'make polynomial'
+-- > substituteVar 'x' (makeConst 3) (mp "x^2 + 1")
+-- 10
+mp = parseExpr . lexExpr
+
+polyOne :: Polynomial Integer Char
+polyOne = makeConst 1
+
+substVarWith1 v p = substituteVar v polyOne p
+
+substAllVarsWith1 p = substitute p (\v -> polyOne)
 
 
 
@@ -225,12 +240,6 @@ parseExpr tokens =
                     TkPlus:ts  -> parseSum' e True ts
                     TkMinus:ts -> parseSum' e False ts
                     _          -> (e, remainder)
-
--- Shorthand for 'make polynomial'
--- > substituteVariable 'x' (makeConst 3) (mp "x^2 + 1")
--- 10
-mp = parseExpr . lexExpr
-
 
 
 
