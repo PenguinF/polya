@@ -89,14 +89,26 @@ data VarExpression r v = Var v
 polyZero :: CommutativeRing r => Polynomial r v
 polyZero = Polynomial (Const r_zero) r_one
 
+-- (Private)
+makePolyZero :: CommutativeRing r => r -> Polynomial r v
+makePolyZero d
+    | d == r_zero = error "Division by zero"
+    | otherwise   = polyZero
+
+-- (Private)
+makePoly :: CommutativeRing r => Expression r v -> r -> Polynomial r v
+makePoly p d
+    | d == r_zero = error "Division by zero"
+    | otherwise   = Polynomial p d
+
 makeConst :: CommutativeRing r => r -> Polynomial r v
 makeConst c = Polynomial (Const c) r_one
 
 makeRational :: CommutativeRing r => r -> r -> Polynomial r v
 makeRational c d
-    | c == r_zero = polyZero
+    | c == r_zero = makePolyZero d
     | otherwise   = let (c', d') = r_div_by_gcd c d
-                    in  Polynomial (Const c') d'
+                    in  makePoly (Const c') d'
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Polynomial (Expr (Var x)) r_one
@@ -115,8 +127,8 @@ makeMultPoly k es d =
     let (k', d') = r_div_by_gcd k d
         es'      = makeMult k' es
     in case es' of
-        []  -> polyZero
-        [e] -> Polynomial (Expr e) d'
+        []  -> makePolyZero d'
+        [e] -> makePoly (Expr e) d'
 
 
 -- Extracts all constants and embedded Add expressions from a list of polynomials.
@@ -171,8 +183,8 @@ addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r
 addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> makeRational sum d
-        (sum, [e], d) | sum == r_zero -> Polynomial (Expr e) d
-        (sum, es, d)                  -> Polynomial (Expr (Add sum es)) d
+        (sum, [e], d) | sum == r_zero -> makePoly (Expr e) d
+        (sum, es, d)                  -> makePoly (Expr (Add sum es)) d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
         combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (compareAddTerm True) (map makeAddTerm es), d)
@@ -209,8 +221,8 @@ multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial 
 multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> makeRational product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
-        (product, es, d)  | product == r_zero -> polyZero
-        (product, [e], d) | product == r_one  -> Polynomial (Expr e) d
+        (product, es, d)  | product == r_zero -> makePolyZero d
+        (product, [e], d) | product == r_one  -> makePoly (Expr e) d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
         (product, es, d)                      -> makeMultPoly product es d
     where
@@ -240,18 +252,16 @@ expPoly (Polynomial p d) n
     | otherwise =
         case p of
             Const c          -> makeRational (c `r_exp` n) (d `r_exp` n)
-            Expr (Exp e n')  -> Polynomial (Expr (Exp e (n * n'))) (d `r_exp` n)
+            Expr (Exp e n')  -> makePoly (Expr (Exp e (n * n'))) (d `r_exp` n)
             Expr (Mult k es) -> divPoly (distributeExponent k es n) (d `r_exp` n)
-            Expr e           -> Polynomial (Expr (Exp e n)) (d `r_exp` n)
+            Expr e           -> makePoly (Expr (Exp e n)) (d `r_exp` n)
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
-divPoly (Polynomial p d') d
-    | d == r_zero = error "Division by zero"
-    | otherwise   =
-        case p of
-            Const c          -> makeRational c (d `r_mult` d')
-            Expr (Mult k es) -> makeMultPoly k es (d `r_mult` d')
-            Expr e           -> Polynomial (Expr e) (d `r_mult` d')
+divPoly (Polynomial p d') d =
+    case p of
+        Const c          -> makeRational c (d `r_mult` d')
+        Expr (Mult k es) -> makeMultPoly k es (d `r_mult` d')
+        Expr e           -> makePoly (Expr e) (d `r_mult` d')
 
 
 
