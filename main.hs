@@ -112,7 +112,6 @@ sqBoardPolyaGroup n =
 
 
 -- Shorthand functions.
-characteristicPolynomial x y = expandCharacteristic $ characteristic x y
 
 -- 'make polynomial'
 -- > substituteVar 'x' (makeConst 3) (mp "x^2 + 1")
