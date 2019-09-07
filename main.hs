@@ -331,11 +331,17 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("-8",     cmult 3 . xmult . ymult . pdiv 2, "-12xy"),
             ("18y",    pmult (divPoly (makeVar 'x') 6) . pdiv 5, "3xy / 5"),
             ("-8x",    cadd 3 . pdiv 2, "-4x + 3"),
-            ("-8x+2y", cadd 3 . pdiv 2, "(-8x + 2y + 6) / 2"),
+            ("-8x+2y", cadd 3 . pdiv 2, "-4x + y + 3"),
             ("-8x+y",  cadd 3 . pdiv 2, "(-8x + y + 6) / 2"),
             ("2x",     padds [divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(12x + 10y + 15z) / 30"),
-            ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
-            ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
+            ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(24x + 20y + 30z + 15) / 60"),
+            ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(24x + 20y + 30z + 15) / 60"),
+
+            -- Choose least common multiple for a divisor,
+            -- both when addPoly and divPoly are the last operators to be applied.
+            ("0", buildDivAddPoly1, "(105a + 30b + 70c + 21d + 210e + 35f) / 210"),
+            ("0", buildDivAddPoly2, "(105a + 30b + 70c + 21d + 210e + 35f) / 210"),
+            ("0", buildDivAddPoly3, "(2a + 7b + 3c + 10d + e + 6f) / 6350400"),
 
             -- Substitution
             ("x+2",        substituteVar 'x' (makeConst 0), "2"),
@@ -399,8 +405,8 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("(1-a)^3",              expand, "-a³ + 3a² - 3a + 1"),
             -- The characteristic polynomial for all tic-tac-toe symmetries:
             ("(e+x+c)⁹ + 4(e+x+c)³(e²+x²+c²)³ + 2(e+x+c)(e⁴+x⁴+c⁴)² + (e+x+c)(e²+x²+c²)⁴",
-             expand,
-             "8c⁹ + 24c⁸e + 24c⁸x + 64c⁷e² + 96c⁷ex + 64c⁷x² + 128c⁶e³ + 304c⁶e²x + 304c⁶ex² + 128c⁶x³ + 184c⁵e⁴ + 576c⁵e³x + 864c⁵e²x² + 576c⁵ex³ + 184c⁵x⁴ + 184c⁴e⁵ + 712c⁴e⁴x + 1392c⁴e³x² + 1392c⁴e²x³ + 712c⁴ex⁴ + 184c⁴x⁵ + 128c³e⁶ + 576c³e⁵x + 1392c³e⁴x² + 1824c³e³x³ + 1392c³e²x⁴ + 576c³ex⁵ + 128c³x⁶ + 64c²e⁷ + 304c²e⁶x + 864c²e⁵x² + 1392c²e⁴x³ + 1392c²e³x⁴ + 864c²e²x⁵ + 304c²ex⁶ + 64c²x⁷ + 24ce⁸ + 96ce⁷x + 304ce⁶x² + 576ce⁵x³ + 712ce⁴x⁴ + 576ce³x⁵ + 304ce²x⁶ + 96cex⁷ + 24cx⁸ + 8e⁹ + 24e⁸x + 64e⁷x² + 128e⁶x³ + 184e⁵x⁴ + 184e⁴x⁵ + 128e³x⁶ + 64e²x⁷ + 24ex⁸ + 8x⁹"),
+             expand . pdiv 8,
+             "c⁹ + 3c⁸e + 3c⁸x + 8c⁷e² + 12c⁷ex + 8c⁷x² + 16c⁶e³ + 38c⁶e²x + 38c⁶ex² + 16c⁶x³ + 23c⁵e⁴ + 72c⁵e³x + 108c⁵e²x² + 72c⁵ex³ + 23c⁵x⁴ + 23c⁴e⁵ + 89c⁴e⁴x + 174c⁴e³x² + 174c⁴e²x³ + 89c⁴ex⁴ + 23c⁴x⁵ + 16c³e⁶ + 72c³e⁵x + 174c³e⁴x² + 228c³e³x³ + 174c³e²x⁴ + 72c³ex⁵ + 16c³x⁶ + 8c²e⁷ + 38c²e⁶x + 108c²e⁵x² + 174c²e⁴x³ + 174c²e³x⁴ + 108c²e²x⁵ + 38c²ex⁶ + 8c²x⁷ + 3ce⁸ + 12ce⁷x + 38ce⁶x² + 72ce⁵x³ + 89ce⁴x⁴ + 72ce³x⁵ + 38ce²x⁶ + 12cex⁷ + 3cx⁸ + e⁹ + 3e⁸x + 8e⁷x² + 16e⁶x³ + 23e⁵x⁴ + 23e⁴x⁵ + 16e³x⁶ + 8e²x⁷ + 3ex⁸ + x⁹"),
 
             -- Coefficient (select only that part of the expanded polynomial
             -- with a particular set of variables raised to some power)
@@ -446,6 +452,41 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         pmult p q = multPoly [p, q]
         pexp = swap expPoly
         pdiv = swap divPoly
+
+        -- "a/2 + b/7 + c/3 + d/10 + e + f/6"
+        buildDivAddPoly1 _ =
+            addPoly [
+                divPoly (makeVar 'a') 2,
+                divPoly (makeVar 'b') 7,
+                divPoly (makeVar 'c') 3,
+                divPoly (makeVar 'd') 10,
+                divPoly (makeVar 'e') 1,
+                divPoly (makeVar 'f') 6
+            ]
+
+        -- "(1260a + 360b + 840c + 252d + 2520e + 420f) / 2520"
+        -- "( 105a +  30b +  70c +  21d +  210e +  35f) / 210"
+        buildDivAddPoly2 _ =
+            divPoly (addPoly [
+                multPoly [makeVar 'a', makeConst 1260],
+                multPoly [makeVar 'b', makeConst 360],
+                multPoly [makeVar 'c', makeConst 840],
+                multPoly [makeVar 'd', makeConst 252],
+                multPoly [makeVar 'e', makeConst 2520],
+                multPoly [makeVar 'f', makeConst 420]
+            ]) 2520
+
+        -- "(a/1260 + b/360 + c/840 + d/252 + e/2520 + f/420) / 2520"
+        -- "(2a + 7b + 3c + 10d + e + 6f) / 6350400"
+        buildDivAddPoly3 _ =
+           divPoly (addPoly [
+               divPoly (makeVar 'a') 1260,
+               divPoly (makeVar 'b') 360,
+               divPoly (makeVar 'c') 840,
+               divPoly (makeVar 'd') 252,
+               divPoly (makeVar 'e') 2520,
+               divPoly (makeVar 'f') 420
+           ]) 2520
 
         -- Because WinGHCi cannot show these characters.
         replaceOddChars [] = []
