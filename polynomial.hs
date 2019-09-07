@@ -217,7 +217,7 @@ multPoly ps =
 -- (Private)
 distributeExponent :: (CommutativeRing r, Ord r, Ord v) => r -> [VarExpression r v] -> Integer -> Polynomial r v
 -- Recurse over expPoly because some terms may be Exp expressions.
-distributeExponent k es n = multPoly (makeRational (k `r_exp` n) r_one : [expPoly (Polynomial (Expr e r_one)) n | e <- es])
+distributeExponent k es n = multPoly (makeConst (k `r_exp` n) : [expPoly (Polynomial (Expr e r_one)) n | e <- es])
 
 -- Raises a polynomial to a power.
 expPoly :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Integer -> Polynomial r v
