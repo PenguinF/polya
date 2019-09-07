@@ -33,16 +33,15 @@ import Eutherion.Combinatorics
 -- This divisor is 2 in example polynomial ½(x + 4)³.
 -- 'r' is the ring type, 'v' the type used for variables.
 
--- Const r r is a constant scalar value. Const 2 3 represents 2/3.
--- Expr (VarExpression r v) r is an expression on variables.
+-- Const r is a constant scalar value. Polynomial (Const 2) 3 represents 2/3.
+-- Expr (VarExpression r v) is an expression on variables.
 -- ½(x + 4)³ is represented by:
--- VarExpression (Exp (Add 4 [Var 'x']) 3) 2
+-- Polynomial (Expr (Exp (Add 4 [Var 'x']) 3)) 2
 
 -- Invariants (0 == r_zero, 1 == r_one):
 --
--- 'd' in 'Const x d' is never equal to 0.
--- If 'x' in 'Const x d' is equal to 0, then 'd' is equal to 1.
--- 'd' in 'Expr e d' is never equal to 0.
+-- 'd' in 'Polynomial p d' is never equal to 0.
+-- If 'x' in 'Polynomial (Const x) d' is equal to 0, then 'd' is equal to 1.
 -- 'es' in 'Add c es' is always non-empty.
 -- 'es' in 'Mult k es' is always non-empty.
 -- 'k' in 'Mult k es' is never equal to 0.
@@ -74,15 +73,15 @@ data VarExpression r v = Var v
 -- > divPoly ((makeConst :: Integer -> Polynomial Integer Char) 3) 2
 -- 3 / 2
 -- > multPoly [divPoly ((makeConst :: Integer -> Polynomial Integer Char) 3) 2, divPoly ((makeConst :: Integer -> Polynomial Integer Char) 1) 3]
--- 3 / 6
+-- 1 / 2
 -- > divPoly (makeVar 'x') 3
 -- x / 3
 -- > multPoly [divPoly (makeConst 3) 2, divPoly (makeVar 'x') 3]
--- 3x / 6
+-- x / 2
 -- > expPoly (divPoly (makeVar 'x') 3) 2
 -- x^2 / 9
 -- > multPoly [divPoly (makeConst 3) 2, expPoly (divPoly (makeVar 'x') 3) 2]
--- 3x^2 / 18
+-- x^2 / 6
 -- > addPoly [makeVar 'x', divPoly (makeConst 3) 4, divPoly (makeConst 4) 3]
 -- (12x + 25) / 12
 
@@ -664,14 +663,13 @@ instance Functor (Polynomial r) where
 
 -- CommutativeRing instance for Polynomial
 
--- Maybe require Ord b constraint rather than Eq b, like Set, so normalization is more efficient?
 instance (CommutativeRing a, Ord a, Ord b) => CommutativeRing (Polynomial a b) where
     r_zero       = polyZero
     r_one        = makeConst r_one
     r_add p q    = addPoly [p, q]
     r_mult p q   = multPoly [p, q]
     r_exp p n    = expPoly p n
-    r_min p      = multPoly [makeConst (r_min r_one), p] -- TODO: r_add p (r_min p) must always be r_zero.
+    r_min p      = multPoly [makeConst (r_min r_one), p]
     r_isNegative = r_isNegative'
         where
             r_isNegative' (Polynomial p _) =
