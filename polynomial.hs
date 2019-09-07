@@ -114,6 +114,24 @@ makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Polynomial (Expr (Var x)) r_one
 
 -- (Private)
+makeAddPolyGcd :: CommutativeRing r => r -> [VarExpression r v] -> r -> Polynomial r v
+makeAddPolyGcd k es d = makeAddPolyGcd' (foldr gcdWithVarExpression (d `r_gcd` k) es) k es d
+    where
+        gcdWithVarExpression e gcd =
+            case e of
+                Mult k _ -> gcd `r_gcd` k
+                _        -> r_one
+
+        makeAddPolyGcd' gcd k es d =
+            let (k', _) = r_div_by_gcd k gcd
+                es'     = map divVarExpression es
+                (d', _) = r_div_by_gcd d gcd
+            in  makePoly (Expr (Add k' es')) d'
+            where
+                divVarExpression (Mult k es) = let (k', _) = r_div_by_gcd k gcd in Mult k' es
+                divVarExpression e           = e
+
+-- (Private)
 makeMult :: CommutativeRing r => r -> [VarExpression r v] -> [VarExpression r v]
 makeMult k es =
     case es of
@@ -184,7 +202,7 @@ addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> makeRational sum d
         (sum, [e], d) | sum == r_zero -> makePoly (Expr e) d
-        (sum, es, d)                  -> makePoly (Expr (Add sum es)) d
+        (sum, es, d)                  -> makeAddPolyGcd sum es d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
         combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (compareAddTerm True) (map makeAddTerm es), d)
@@ -263,6 +281,7 @@ divPoly (Polynomial p d1) d2 =
     in case p of
         Const c          -> makeRational c d'
         Expr (Mult k es) -> makeMultPoly k es d'
+        Expr (Add k es)  -> makeAddPolyGcd k es d'
         Expr e           -> makePoly (Expr e) d'
 
 
@@ -504,7 +523,7 @@ convertNormSumToExpression (c, products) d =
         (c, [])                                       -> makeRational c d
         (c, [(k, [var])]) | c == r_zero && k == r_one -> Polynomial (Expr (convertNormVarToExpression var)) d
         (c, [(k, vars)])  | c == r_zero               -> makeMultPoly k (map convertNormVarToExpression vars) d
-        (c, products)                                 -> Polynomial (Expr (Add c (concat (map convertNormProductToExpression products)))) d
+        (c, products)                                 -> makeAddPolyGcd c (concat (map convertNormProductToExpression products)) d
     where
         convertNormProductToExpression :: CommutativeRing r => NormProduct r v -> [VarExpression r v]
         convertNormProductToExpression (k, vars) = makeMult k (map convertNormVarToExpression vars)
