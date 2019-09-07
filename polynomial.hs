@@ -183,15 +183,13 @@ addPoly ps =
 -- Assumes all operands have already been normalized.
 -- (Private)
 extractConstantsAndMultOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
-extractConstantsAndMultOperands es =
-    case es of
-        []                                    -> (r_one, [], r_one)
-        Polynomial (Const n) d : es           -> let (n', vs, d') = extractConstantsAndMultOperands es
-                                                 in  (n `r_mult` n', vs, d `r_mult` d')
-        Polynomial (Expr (Mult n es')) d : es -> let (n', vs, d') = extractConstantsAndMultOperands es
-                                                 in  (n `r_mult` n', es' ++ vs, d `r_mult` d')
-        Polynomial (Expr e) d : es            -> let (n', vs, d') = extractConstantsAndMultOperands es
-                                                 in  (n', e : vs, d `r_mult` d')
+extractConstantsAndMultOperands = foldr multConstantsAndOperands (r_one, [], r_one)
+    where
+        multConstantsAndOperands (Polynomial p d) (n, vs, d') =
+            case p of
+                Const m          -> (m `r_mult` n, vs,       d `r_mult` d')
+                Expr (Mult m es) -> (m `r_mult` n, es ++ vs, d `r_mult` d')
+                Expr e           -> (n,            e : vs,   d `r_mult` d')
 
 -- Distributes a multiplier over a sum.
 -- k(x + y) -> kx + ky
