@@ -250,11 +250,12 @@ expPoly (Polynomial p d) n
     | n <= 0    = error "Zero or negative exponents not allowed"
     | n == 1    = Polynomial p d
     | otherwise =
-        case p of
-            Const c          -> makeRational (c `r_exp` n) (d `r_exp` n)
-            Expr (Exp e n')  -> makePoly (Expr (Exp e (n * n'))) (d `r_exp` n)
-            Expr (Mult k es) -> divPoly (distributeExponent k es n) (d `r_exp` n)
-            Expr e           -> makePoly (Expr (Exp e n)) (d `r_exp` n)
+        let d' = d `r_exp` n
+        in case p of
+            Const c          -> makeRational (c `r_exp` n) d'
+            Expr (Exp e m)   -> makePoly (Expr (Exp e (m * n))) d'
+            Expr (Mult k es) -> divPoly (distributeExponent k es n) d'
+            Expr e           -> makePoly (Expr (Exp e n)) d'
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
 divPoly (Polynomial p d') d =
