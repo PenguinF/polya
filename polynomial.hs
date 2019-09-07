@@ -258,11 +258,12 @@ expPoly (Polynomial p d) n
             Expr e           -> makePoly (Expr (Exp e n)) d'
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
-divPoly (Polynomial p d') d =
-    case p of
-        Const c          -> makeRational c (d `r_mult` d')
-        Expr (Mult k es) -> makeMultPoly k es (d `r_mult` d')
-        Expr e           -> makePoly (Expr e) (d `r_mult` d')
+divPoly (Polynomial p d1) d2 =
+    let d' = d1 `r_mult` d2
+    in case p of
+        Const c          -> makeRational c d'
+        Expr (Mult k es) -> makeMultPoly k es d'
+        Expr e           -> makePoly (Expr e) d'
 
 
 
