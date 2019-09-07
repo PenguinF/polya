@@ -176,25 +176,19 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
         -- The 'before' list can be done by adding an extra 'running value' parameter (beforeProduct),
         -- the 'after' list by using the returned divisor value.
         extractConstantsAndAddOperands' :: CommutativeRing r => r -> [Polynomial r v] -> (r, [VarExpression r v], r)
-        extractConstantsAndAddOperands' beforeProduct es =
-            case es of
-                []                                   -> (r_zero, [], r_one)
-                Polynomial (Const n) d : es          -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
-                                                            multiplier   = beforeProduct `r_mult` d'
-                                                            n''          = (n `r_mult` multiplier) `r_add` n'
-                                                        in  (n'', vs, d' `r_mult` d)
-                Polynomial (Expr (Add n es')) d : es -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
-                                                            multiplier   = beforeProduct `r_mult` d'
-                                                            n''          = (n `r_mult` multiplier) `r_add` n'
-                                                        in  (n'', concat (map (distribute multiplier) es') ++ vs, d' `r_mult` d)
-                Polynomial (Expr e) d : es           -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
-                                                            multiplier   = beforeProduct `r_mult` d'
-                                                        in  (n', distribute multiplier e ++ vs, d' `r_mult` d)
-
-        distribute multiplier e =
-            case e of
-                Mult k es -> makeMult (multiplier `r_mult` k) es
-                e         -> makeMult multiplier [e]
+        extractConstantsAndAddOperands' beforeProduct []                    = (r_zero, [], r_one)
+        extractConstantsAndAddOperands' beforeProduct (Polynomial p d : ps) =
+            let (n, vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) ps
+                multiplier  = beforeProduct `r_mult` d'
+            in case p of
+                Const m         -> ((m `r_mult` multiplier) `r_add` n, vs,                                            d `r_mult` d')
+                Expr (Add m es) -> ((m `r_mult` multiplier) `r_add` n, concat (map (distribute multiplier) es) ++ vs, d `r_mult` d')
+                Expr e          -> (n,                                 distribute multiplier e ++ vs,                 d `r_mult` d')
+            where
+                distribute multiplier e =
+                    case e of
+                        Mult k es -> makeMult (multiplier `r_mult` k) es
+                        e         -> makeMult multiplier [e]
 
 -- Adds a list of polynomials to form a new polynomial.
 addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
