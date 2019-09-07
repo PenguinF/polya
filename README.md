@@ -62,6 +62,11 @@ o^9 + 3o^8x + 3o^8 + 8o^7x^2 + 12o^7x + 8o^7 + 16o^6x^3 + 38o^6x^2 + 38o^6x + 16
 -- of truly different tic-tac-toe positions.
 *Main> substAllVarsWith1 $ addPoly [coefficient [('o',o),('x',x)] (substVarWith1 'e' $ characteristic (sqBoardPolyaGroup 3) "exo") | x<-[0..5], o<-[x-1..x]]
 850
+-- 85 of these 850 positions are illegal or unreachable, some examples:
+-- xoo xxx ooo
+-- xxo .o. xx.
+-- xxo o.o .xx
+-- The number of non-isomorphic legal positions therefore is 850 - 85 = 765.
 *Main>
 ```
 
