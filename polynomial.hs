@@ -54,11 +54,11 @@ import Eutherion.Combinatorics
 -- 'e' in 'Exp e n' is never an Exp or Mult expression.
 -- 'Mult k [Add c es]' is expanded to 'Add (c*k) fs' where k is distributed over each expression in es.
 
-data Polynomial r v = Polynomial (Expression r v)
+data Polynomial r v = Polynomial (Expression r v) r
                     deriving Eq
 
-data Expression r v = Const r r
-                    | Expr (VarExpression r v) r
+data Expression r v = Const r
+                    | Expr (VarExpression r v)
                     deriving Eq
 
 data VarExpression r v = Var v
@@ -87,19 +87,19 @@ data VarExpression r v = Var v
 -- (12x + 25) / 12
 
 polyZero :: CommutativeRing r => Polynomial r v
-polyZero = Polynomial (Const r_zero r_one)
+polyZero = Polynomial (Const r_zero) r_one
 
 makeConst :: CommutativeRing r => r -> Polynomial r v
-makeConst c = Polynomial (Const c r_one)
+makeConst c = Polynomial (Const c) r_one
 
 makeRational :: CommutativeRing r => r -> r -> Polynomial r v
 makeRational c d
     | c == r_zero = polyZero
     | otherwise   = let (c', d') = r_div_by_gcd c d
-                    in  Polynomial (Const c' d')
+                    in  Polynomial (Const c') d'
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
-makeVar x = Polynomial (Expr (Var x) r_one)
+makeVar x = Polynomial (Expr (Var x)) r_one
 
 -- Extracts all constants and embedded Add expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
@@ -130,16 +130,16 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
         extractConstantsAndAddOperands' :: CommutativeRing r => r -> [Polynomial r v] -> (r, [VarExpression r v], r)
         extractConstantsAndAddOperands' beforeProduct es =
             case es of
-                []                      -> (r_zero, [], r_one)
-                Polynomial (Const n d) : es          -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                []                                   -> (r_zero, [], r_one)
+                Polynomial (Const n) d : es          -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
                                                             multiplier   = beforeProduct `r_mult` d'
                                                             n''          = (n `r_mult` multiplier) `r_add` n'
                                                         in  (n'', vs, d' `r_mult` d)
-                Polynomial (Expr (Add n es') d) : es -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                Polynomial (Expr (Add n es')) d : es -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
                                                             multiplier   = beforeProduct `r_mult` d'
                                                             n''          = (n `r_mult` multiplier) `r_add` n'
                                                         in  (n'', map (distribute multiplier) es' ++ vs, d' `r_mult` d)
-                Polynomial (Expr e d) : es           -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
+                Polynomial (Expr e) d : es           -> let (n', vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) es
                                                             multiplier   = beforeProduct `r_mult` d'
                                                         in  (n', distribute multiplier e : vs, d' `r_mult` d)
 
@@ -154,8 +154,8 @@ addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r
 addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> makeRational sum d
-        (sum, [e], d) | sum == r_zero -> Polynomial (Expr e d)
-        (sum, es, d)                  -> Polynomial (Expr (Add sum es) d)
+        (sum, [e], d) | sum == r_zero -> Polynomial (Expr e) d
+        (sum, es, d)                  -> Polynomial (Expr (Add sum es)) d
     where
         -- (m ∙ x) + (n ∙ x) -> (m + n) ∙ x
         combineSum (sum, es, d) = (sum, groupAndSort combineGroupedAddTerms (compareAddTerm True) (map makeAddTerm es), d)
@@ -173,11 +173,11 @@ extractConstantsAndMultOperands :: CommutativeRing r => [Polynomial r v] -> (r, 
 extractConstantsAndMultOperands es =
     case es of
         []                                    -> (r_one, [], r_one)
-        Polynomial (Const n d) : es           -> let (n', vs, d') = extractConstantsAndMultOperands es
+        Polynomial (Const n) d : es           -> let (n', vs, d') = extractConstantsAndMultOperands es
                                                  in  (n `r_mult` n', vs, d `r_mult` d')
-        Polynomial (Expr (Mult n es') d) : es -> let (n', vs, d') = extractConstantsAndMultOperands es
+        Polynomial (Expr (Mult n es')) d : es -> let (n', vs, d') = extractConstantsAndMultOperands es
                                                  in  (n `r_mult` n', es' ++ vs, d `r_mult` d')
-        Polynomial (Expr e d) : es            -> let (n', vs, d') = extractConstantsAndMultOperands es
+        Polynomial (Expr e) d : es            -> let (n', vs, d') = extractConstantsAndMultOperands es
                                                  in  (n', e : vs, d `r_mult` d')
 
 -- Distributes a multiplier over a sum.
@@ -191,7 +191,7 @@ extractConstantsAndMultOperands es =
 --   = [12x + 6y + 18] mod 12
 --   = [6y + 6] mod 12
 distributeMultiplier :: (CommutativeRing r, Ord r, Ord v) => r -> r -> [VarExpression r v] -> Polynomial r v
-distributeMultiplier k c es = addPoly (makeConst (c `r_mult` k) : [multPoly [makeConst k, Polynomial (Expr e r_one)] | e <- es])
+distributeMultiplier k c es = addPoly (makeConst (c `r_mult` k) : [multPoly [makeConst k, Polynomial (Expr e) r_one] | e <- es])
 
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
@@ -199,10 +199,10 @@ multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> makeRational product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
         (product, es, d)  | product == r_zero -> polyZero
-        (product, [e], d) | product == r_one  -> Polynomial (Expr e d)
+        (product, [e], d) | product == r_one  -> Polynomial (Expr e) d
         (product, [Add c es], d)              -> divPoly (distributeMultiplier product c es) d
         (product, es, d)                      -> let (product', d') = r_div_by_gcd product d
-                                                 in  Polynomial (Expr (Mult product' es) d')
+                                                 in  Polynomial (Expr (Mult product' es)) d'
     where
         -- x^m * x^n -> x^(m+n)
         combineProduct (product, es, d) = (product, groupAndSort combineGroupedMultTerms (compareMultTerm True) (map makeMultTerm es), d)
@@ -217,32 +217,32 @@ multPoly ps =
 -- (Private)
 distributeExponent :: (CommutativeRing r, Ord r, Ord v) => r -> [VarExpression r v] -> Integer -> Polynomial r v
 -- Recurse over expPoly because some terms may be Exp expressions.
-distributeExponent k es n = multPoly (makeConst (k `r_exp` n) : [expPoly (Polynomial (Expr e r_one)) n | e <- es])
+distributeExponent k es n = multPoly (makeConst (k `r_exp` n) : [expPoly (Polynomial (Expr e) r_one) n | e <- es])
 
 -- Raises a polynomial to a power.
 expPoly :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Integer -> Polynomial r v
-expPoly (Polynomial p) n
+expPoly (Polynomial p d) n
     -- Disallow zero exponent because of 0^0 and x^0. Purpose of this
     -- polynomial type is not to solve equations to find those 'x' values
     -- for which the result polynomial value is undefined.
     | n <= 0    = error "Zero or negative exponents not allowed"
-    | n == 1    = Polynomial p
+    | n == 1    = Polynomial p d
     | otherwise =
         case p of
-            Const c d          -> makeRational (c `r_exp` n) (d `r_exp` n)
-            Expr (Exp e n') d  -> Polynomial (Expr (Exp e (n * n')) (d `r_exp` n))
-            Expr (Mult k es) d -> divPoly (distributeExponent k es n) (d `r_exp` n)
-            Expr e d           -> Polynomial (Expr (Exp e n) (d `r_exp` n))
+            Const c          -> makeRational (c `r_exp` n) (d `r_exp` n)
+            Expr (Exp e n')  -> Polynomial (Expr (Exp e (n * n'))) (d `r_exp` n)
+            Expr (Mult k es) -> divPoly (distributeExponent k es n) (d `r_exp` n)
+            Expr e           -> Polynomial (Expr (Exp e n)) (d `r_exp` n)
 
 divPoly :: CommutativeRing r => Polynomial r v -> r -> Polynomial r v
-divPoly (Polynomial p) d
+divPoly (Polynomial p d') d
     | d == r_zero = error "Division by zero"
     | otherwise   =
         case p of
-            Const c d'          -> makeRational c (d `r_mult` d')
-            Expr (Mult k es) d' -> let (k', d'') = r_div_by_gcd k (d `r_mult` d')
-                                   in  Polynomial (Expr (Mult k' es) d'')
-            Expr e d'           -> Polynomial (Expr e (d `r_mult` d'))
+            Const c          -> makeRational c (d `r_mult` d')
+            Expr (Mult k es) -> let (k', d'') = r_div_by_gcd k (d `r_mult` d')
+                                in  Polynomial (Expr (Mult k' es)) d''
+            Expr e           -> Polynomial (Expr e) (d `r_mult` d')
 
 
 
@@ -258,10 +258,10 @@ substituteVar x p q = substitute q (replaceIfEqual x p)
                              | otherwise = makeVar y
 
 substitute :: (CommutativeRing r, Ord r, Ord v, Ord w) => Polynomial r v -> (v -> Polynomial r w) -> Polynomial r w
-substitute (Polynomial p) f =
+substitute (Polynomial p d) f =
     case p of
-        Const n d -> Polynomial (Const n d)
-        Expr e d  -> divPoly (substitute' f e) d
+        Const n -> Polynomial (Const n) d
+        Expr e  -> divPoly (substitute' f e) d
     where
         substitute' f e =
             case e of
@@ -481,10 +481,10 @@ convertNormSumToExpression :: CommutativeRing r => NormSum r v -> r -> Polynomia
 convertNormSumToExpression (c, products) d =
     case (c, products) of
         (c, [])                                       -> makeRational c d
-        (c, [(k, [var])]) | c == r_zero && k == r_one -> Polynomial (Expr (convertNormVarToExpression var) d)
+        (c, [(k, [var])]) | c == r_zero && k == r_one -> Polynomial (Expr (convertNormVarToExpression var)) d
         (c, [(k, vars)])  | c == r_zero               -> let (k', d') = r_div_by_gcd k d
-                                                         in  Polynomial (Expr (Mult k' (map convertNormVarToExpression vars)) d')
-        (c, products)                                 -> Polynomial (Expr (Add c (map convertNormProductToExpression products)) d)
+                                                         in  Polynomial (Expr (Mult k' (map convertNormVarToExpression vars))) d'
+        (c, products)                                 -> Polynomial (Expr (Add c (map convertNormProductToExpression products))) d
     where
         convertNormProductToExpression :: CommutativeRing r => NormProduct r v -> VarExpression r v
         convertNormProductToExpression (k, vars) =
@@ -499,10 +499,10 @@ convertNormSumToExpression (c, products) d =
                 (x, n) -> Exp (Var x) n
 
 expand :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Polynomial r v
-expand (Polynomial p) =
+expand (Polynomial p d) =
     case p of
-        Const n d -> Polynomial (Const n d)
-        Expr e d  -> convertNormSumToExpression (expandVarExpression e) d
+        Const n -> Polynomial (Const n) d
+        Expr e  -> convertNormSumToExpression (expandVarExpression e) d
 
 coefficient :: (CommutativeRing r, Ord r, Ord v) => [(v, Integer)] -> Polynomial r v -> Polynomial r v
 coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
@@ -517,14 +517,14 @@ coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
 
         matchVar vs (_, ws) = vs == ws
 
-        coefficient' vs (Polynomial p) =
+        coefficient' vs (Polynomial p d) =
             case (vs, p) of
-                ([], Const c d) -> Polynomial (Const c d)
-                (_,  Const _ _) -> polyZero
-                ([], Expr e d)  -> let (c, _) = expandVarExpression e
-                                   in  convertNormSumToExpression (c, []) d
-                (vs, Expr e d)  -> let (_, products) = expandVarExpression e
-                                   in  convertNormSumToExpression (r_zero, filter (matchVar vs) products) d
+                ([], Const c) -> Polynomial (Const c) d
+                (_,  Const _) -> polyZero
+                ([], Expr e)  -> let (c, _) = expandVarExpression e
+                                 in  convertNormSumToExpression (c, []) d
+                (vs, Expr e)  -> let (_, products) = expandVarExpression e
+                                 in  convertNormSumToExpression (r_zero, filter (matchVar vs) products) d
 
 
 
@@ -557,11 +557,11 @@ showPoly = showPolynomial (\n -> formatAsNumber exponentCharacterLookup n)
 
 -- Shows polynomials given a function to display exponents.
 showPolynomial :: (CommutativeRing r, Show r, ShowablePolynomialVariable v) => (Integer -> String) -> Polynomial r v -> String
-showPolynomial expShow (Polynomial p) =
+showPolynomial expShow (Polynomial p d) =
     case p of
-        Const n d          -> withDivisor (show n) d False
-        Expr (Add n es) d  -> withDivisor (shv 0 (Add n es)) d True
-        Expr e d           -> withDivisor (shv 0 e) d False
+        Const n         -> withDivisor (show n) d False
+        Expr (Add n es) -> withDivisor (shv 0 (Add n es)) d True
+        Expr e          -> withDivisor (shv 0 e) d False
     where
         withDivisor s d needBrackets =
             case d of
@@ -619,8 +619,8 @@ showPolynomial expShow (Polynomial p) =
 instance Functor (Polynomial r) where
     fmap f p =
         case p of
-            Polynomial (Const n d) -> Polynomial (Const n d)
-            Polynomial (Expr e d)  -> Polynomial (Expr (fmapVarExpression f e) d)
+            Polynomial (Const n) d -> Polynomial (Const n) d
+            Polynomial (Expr e) d  -> Polynomial (Expr (fmapVarExpression f e)) d
         where
             fmapVarExpression f e =
                 case e of
@@ -644,10 +644,10 @@ instance (CommutativeRing a, Ord a, Ord b) => CommutativeRing (Polynomial a b) w
     r_min p      = multPoly [makeConst (r_min r_one), p] -- TODO: r_add p (r_min p) must always be r_zero.
     r_isNegative = r_isNegative'
         where
-            r_isNegative' (Polynomial p) =
+            r_isNegative' (Polynomial p _) =
                 case p of
-                    Const k d -> r_isNegative k
-                    Expr e d  -> r_isNegative'' e
+                    Const k -> r_isNegative k
+                    Expr e  -> r_isNegative'' e
             r_isNegative'' e =
                 case e of
                     Var y     -> False
