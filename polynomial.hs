@@ -510,8 +510,8 @@ expandVarExpression e =
         Add c es  -> let (k, ps) = addSums (map expandVarExpression es)
                      in  (c `r_add` k, ps)
 
-convertNormSumToExpression :: CommutativeRing r => NormSum r v -> r -> Polynomial r v
-convertNormSumToExpression (c, products) d =
+convertNormSumToPolynomial :: CommutativeRing r => NormSum r v -> r -> Polynomial r v
+convertNormSumToPolynomial (c, products) d =
     case (c, products) of
         (c, [])                                       -> makeRational c d
         (c, [(k, [var])]) | c == r_zero && k == r_one -> Polynomial (Expr (convertNormVarToExpression var)) d
@@ -531,7 +531,7 @@ expand :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Polynomial r v
 expand (Polynomial p d) =
     case p of
         Const n -> Polynomial (Const n) d
-        Expr e  -> convertNormSumToExpression (expandVarExpression e) d
+        Expr e  -> convertNormSumToPolynomial (expandVarExpression e) d
 
 coefficient :: (CommutativeRing r, Ord r, Ord v) => [(v, Integer)] -> Polynomial r v -> Polynomial r v
 coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
@@ -551,9 +551,9 @@ coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
                 ([], Const c) -> Polynomial (Const c) d
                 (_,  Const _) -> polyZero
                 ([], Expr e)  -> let (c, _) = expandVarExpression e
-                                 in  convertNormSumToExpression (c, []) d
+                                 in  convertNormSumToPolynomial (c, []) d
                 (vs, Expr e)  -> let (_, products) = expandVarExpression e
-                                 in  convertNormSumToExpression (r_zero, filter (matchVar vs) products) d
+                                 in  convertNormSumToPolynomial (r_zero, filter (matchVar vs) products) d
 
 
 
