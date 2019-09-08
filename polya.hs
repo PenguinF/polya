@@ -3,6 +3,7 @@ module Eutherion.Polya (
        PolyaGroup,
        makePolyaGroup,
        cayleyTable,
+       orbit,
        characteristic
 
        ) where
@@ -72,6 +73,15 @@ cayleyTable (PolyaGroup slots fns) =
                         Nothing -> error ("Function " ++ show i ++ " has no inverse.")
 
 
+-- Returns the orbit of a value 'x' under function 'f',
+-- i.e. the list of values which is the result of iterating the function 'f'
+-- on 'x', until 'x' is returned again.
+-- > orbit ((swap mod 7) . (*3)) 1
+-- [1,3,2,6,4,5]
+orbit :: Eq a => (a -> a) -> a -> [a]
+orbit f x = x : (takeWhile (/= x) $ tail $ iterate f x)
+
+
 -- Returns the characteristic polynomial for a Pólya group and a number of choices represented by characters.
 -- Example usage:
 -- > characteristic (sqBoardPolyaGroup 3) "exo"
@@ -82,20 +92,26 @@ cayleyTable (PolyaGroup slots fns) =
 -- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
 characteristic :: (Eq a, Ord b) => PolyaGroup a -> [b] -> Polynomial Integer b
 characteristic (PolyaGroup slots symmetries) cs =
-    divPoly (genExpression cs $ map removeSharedOrbits orbitLengths) (toInteger $ length symmetries)
+    divPoly (genExpression symmetries) (toInteger $ length symmetries)
     where
-        -- For sqBoardPolyaGroup 3, orbitLengths has this value:
-        -- [[1,1,1,1,1,1,1,1,1],[2,2,2,1,1,1,2,2,2],[2,1,2,2,1,2,2,1,2],[2,2,1,2,1,2,1,2,2],[1,2,2,2,1,2,2,2,1],[4,4,4,4,1,4,4,4,4],[2,2,2,2,1,2,2,2,2],[4,4,4,4,1,4,4,4,4]]
-        orbitLengths = [[(+1) $ length $ takeWhile (/= slot) $ tail $ iterate symmetry slot | slot <- slots] | symmetry <- symmetries]
+        -- For sqBoardPolyaGroup 3, '(removeSharedOrbits . sort . orbitLengths) symmetry'
+        -- has these values for all 8 symmetries:
+        -- [1,1,1,1,1,1,1,1,1]
+        -- [1,1,1,2,2,2]
+        -- [1,1,1,2,2,2]
+        -- [1,1,1,2,2,2]
+        -- [1,1,1,2,2,2]
+        -- [1,4,4]
+        -- [1,2,2,2,2]
+        -- [1,4,4]
+        orbitLengths symmetry = map (length . orbit symmetry) slots
 
-        removeSharedOrbits os = removeSharedOrbits' (sort os)
-            where
-                removeSharedOrbits' os =
-                    case os of
-                        []   -> []
-                        o:os -> o : removeSharedOrbits' (drop (o - 1) os)
+        removeSharedOrbits os =
+            case os of
+                []   -> []
+                o:os -> o : removeSharedOrbits (drop (o - 1) os)
 
-        genExpression cs = addPoly . map (multPoly . map selectOneValue)
-            where
-                -- Generates e.g. e^4 + o^4 + x^4
-                selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
+        -- Generates e.g. e^4 + o^4 + x^4
+        selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
+
+        genExpression = addPoly . map (multPoly . map selectOneValue . removeSharedOrbits . sort . orbitLengths)
