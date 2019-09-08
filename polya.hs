@@ -88,7 +88,6 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- [[1,1,1,1,1,1,1,1,1],[2,2,2,1,1,1,2,2,2],[2,1,2,2,1,2,2,1,2],[2,2,1,2,1,2,1,2,2],[1,2,2,2,1,2,2,2,1],[4,4,4,4,1,4,4,4,4],[2,2,2,2,1,2,2,2,2],[4,4,4,4,1,4,4,4,4]]
         orbitLengths = [[(+1) $ length $ takeWhile (/= slot) $ tail $ iterate symmetry slot | slot <- slots] | symmetry <- symmetries]
 
-        removeSharedOrbits :: [Int] -> [Int]
         removeSharedOrbits os = removeSharedOrbits' (sort os)
             where
                 removeSharedOrbits' os =
@@ -96,18 +95,7 @@ characteristic (PolyaGroup slots symmetries) cs =
                         []   -> []
                         o:os -> o : removeSharedOrbits' (drop (o - 1) os)
 
-        genExpression :: (Integral a, Ord b) => [b] -> [[a]] -> Polynomial Integer b
-        genExpression cs orbitGroups = addPoly $ groupAndSort valuesForAllOrbits compare orbitGroups
+        genExpression cs = addPoly . map (multPoly . map selectOneValue)
             where
-                -- Expression to choose one element out of cs for 'orbitLength' slots simultaneously (i.e. they are all the same).
-                selectOneValue orbitLength cs = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
-
-                -- Expression to choose values for groups of slots with the same choice expression.
-                selectIndependentValues slotGroupCount choiceExpression = expPoly choiceExpression (toInteger slotGroupCount)
-
-                -- Choose independent values for a group of slots with the same orbit length.
-                multipleIndependentValues orbitLength grp = [selectIndependentValues (length grp + 1) (selectOneValue orbitLength cs)]
-
-                -- Choose independent values for all orbits of one symmetry operation,
-                -- then multiply by the number of symmetries which share the same set of orbit lengths.
-                valuesForAllOrbits orbits orbitGroup = [multPoly (makeConst (toInteger (1 + length orbitGroup)) : (groupAndSort multipleIndependentValues compare orbits))]
+                -- Generates e.g. e^4 + o^4 + x^4
+                selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
