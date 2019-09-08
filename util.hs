@@ -12,7 +12,6 @@ module Eutherion.Utilities (
        conditionalElem,
        listToSimpleArray,
        joinList,
-       desc,
        groupAndSort
 
        ) where
@@ -104,11 +103,6 @@ joinList infixFn showFn elements =
             case elements of
                 []    -> showFn x1
                 x2:xs -> showFn x1 ++ infixFn x1 x2 ++ joinListInner infixFn showFn x2 xs
-
-desc :: Ordering -> Ordering
-desc LT = GT
-desc EQ = EQ
-desc GT = LT
 
 -- Allows quick-sorting with a custom function to deal with groups of equal elements.
 groupAndSort :: (a -> [a] -> [b])     -- Function applied on a pivot element and all other elements from the list equal to it,
