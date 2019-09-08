@@ -400,7 +400,7 @@ multiplyProducts c ps =
                 (y, n) : vars -> combineGroupedVars (x, m + n) vars
 
         multiplyProduct :: CommutativeRing r => NormProduct r v -> NormProduct r v -> NormProduct r v
-        multiplyProduct (k1, vars1) (k2, vars2) = (k1 `r_mult` k2, [(x, n) | (x, n) <- vars1 ++ vars2])
+        multiplyProduct (k1, vars1) (k2, vars2) = (k1 `r_mult` k2, vars1 ++ vars2)
 
         -- Group by variable name (in ascending order).
         groupByNormVar :: Ord v => NormVar v -> NormVar v -> Ordering
