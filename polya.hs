@@ -80,14 +80,11 @@ cayleyTable (PolyaGroup slots fns) =
 -- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
 characteristic :: (Eq a, Ord b) => PolyaGroup a -> [b] -> Polynomial Integer b
 characteristic (PolyaGroup slots symmetries) cs =
-    divPoly (genExpression cs $ choiceFunction orbitLengths) (toInteger $ length symmetries)
+    divPoly (genExpression cs $ (map removeSharedOrbits) orbitLengths) (toInteger $ length symmetries)
     where
         -- For sqBoardPolyaGroup 3, orbitLengths has this value:
         -- [[1,1,1,1,1,1,1,1,1],[2,2,2,1,1,1,2,2,2],[2,1,2,2,1,2,2,1,2],[2,2,1,2,1,2,1,2,2],[1,2,2,2,1,2,2,2,1],[4,4,4,4,1,4,4,4,4],[2,2,2,2,1,2,2,2,2],[4,4,4,4,1,4,4,4,4]]
         orbitLengths = [[(+1) $ length $ takeWhile (/= slot) $ tail $ iterate symmetry slot | slot <- slots] | symmetry <- symmetries]
-
-        choiceFunction :: [[Int]] -> [[Int]]
-        choiceFunction os = map removeSharedOrbits os
 
         removeSharedOrbits :: [Int] -> [Int]
         removeSharedOrbits os = removeSharedOrbits' (sort os)
