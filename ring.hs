@@ -71,6 +71,11 @@ class Eq a => CommutativeRing a where
     -- gcd `r_mult` x' == x
     -- gcd `r_mult` y' == y
     -- gcd is the 'largest' element for which this is true.
+    --
+    -- Warning:
+    -- If the ring contains zero-divisors, i.e. elements x for which
+    -- there exists some y such that x `r_mult` y -> r_zero, this
+    -- function -must- always return (r_one, x, y).
     r_gcd_div :: a -> a -> (a, a, a)
     r_gcd_div x y = (r_one, x, y)
 
