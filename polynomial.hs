@@ -1,7 +1,6 @@
 module Eutherion.Polynomial (
 
        Polynomial,
-       VarExpression,
 
        polyZero,
        makeConst,
