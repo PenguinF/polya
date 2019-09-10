@@ -666,6 +666,7 @@ instance Functor (Polynomial r) where
 instance (CommutativeRing a, Ord a, Ord b) => CommutativeRing (Polynomial a b) where
     r_zero       = polyZero
     r_one        = makeConst r_one
+    r_ones       = makeConst . r_ones
     r_add p q    = addPoly [p, q]
     r_mult p q   = multPoly [p, q]
     r_exp p n    = expPoly p n

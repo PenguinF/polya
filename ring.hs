@@ -50,6 +50,8 @@ class Eq a => CommutativeRing a where
 
     -- Repeatedly adds r_one to itself, like a multiplication.
     -- Essentially defines a morphism between integers and the set of operands of the ring.
+    -- It is used for converting Integer binomial coefficients to ring elements
+    -- in the 'expand' function.
     -- Instances can override with more efficient implementations.
     r_ones :: Integer -> a
     r_ones n
