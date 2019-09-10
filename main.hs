@@ -450,8 +450,8 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         xmult p = multPoly [makeVar 'x', p]
         ymult p = multPoly [makeVar 'y', p]
         pmult p q = multPoly [p, q]
-        pexp = swap expPoly
-        pdiv = swap divPoly
+        pexp = flip expPoly
+        pdiv = flip divPoly
 
         -- "a/2 + b/7 + c/3 + d/10 + e + f/6"
         buildDivAddPoly1 _ =
