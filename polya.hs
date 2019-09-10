@@ -104,7 +104,7 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- [1,4,4]
         -- [1,2,2,2,2]
         -- [1,4,4]
-        orbitLengths symmetry = map (length . orbit symmetry) slots
+        orbitLengths symmetry = removeSharedOrbits $ sort $ map (length . orbit symmetry) slots
 
         removeSharedOrbits os =
             case os of
@@ -114,4 +114,4 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- Generates e.g. e^4 + o^4 + x^4
         selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
-        genExpression = addPoly . map (multPoly . map selectOneValue . removeSharedOrbits . sort . orbitLengths)
+        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths)
