@@ -23,6 +23,8 @@ module Eutherion.Polynomial (
 
        ) where
 
+import Data.Foldable
+
 import Eutherion.Utilities
 import Eutherion.CommutativeRing
 import Eutherion.Combinatorics
@@ -113,9 +115,9 @@ makeVar x = Polynomial (Expr (Var x)) r_one
 
 -- (Private)
 makeAddPolyGcd :: CommutativeRing r => r -> [VarExpression r v] -> r -> Polynomial r v
-makeAddPolyGcd k es d = makeAddPolyGcd' (foldr gcdWithVarExpression (d `r_gcd` k) es) k es d
+makeAddPolyGcd k es d = makeAddPolyGcd' (foldl' gcdWithVarExpression (d `r_gcd` k) es) k es d
     where
-        gcdWithVarExpression e gcd =
+        gcdWithVarExpression gcd e =
             case e of
                 Mult k _ -> gcd `r_gcd` k
                 _        -> r_one
@@ -205,9 +207,9 @@ addPoly ps =
 -- Assumes all operands have already been normalized.
 -- (Private)
 extractConstantsAndMultOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
-extractConstantsAndMultOperands = foldr multConstantsAndOperands (r_one, [], r_one)
+extractConstantsAndMultOperands = foldl' multConstantsAndOperands (r_one, [], r_one)
     where
-        multConstantsAndOperands (Polynomial p d) (n, vs, d') =
+        multConstantsAndOperands (n, vs, d') (Polynomial p d) =
             case p of
                 Const m          -> (m `r_mult` n, vs,       d `r_mult` d')
                 Expr (Mult m es) -> (m `r_mult` n, es ++ vs, d `r_mult` d')
@@ -388,7 +390,7 @@ multiplyProducts :: (CommutativeRing r, Ord v) => r -> [NormProduct r v] -> Norm
 multiplyProducts c ps =
     case ps of
         [] -> (c, [])  -- Scalar product.
-        ps -> let (k, bigProduct) = foldr multiplyProduct (head ps) (tail ps)
+        ps -> let (k, bigProduct) = foldl' multiplyProduct (head ps) (tail ps)
                   sortedProduct   = groupAndSort combineGroupedVars groupByNormVar bigProduct
               in  (c `r_mult` k, sortedProduct)
     where
@@ -461,7 +463,7 @@ expandPower (c, products) n =
                 initLast (x:xs) = let (ys, y) = initLast xs in (x:ys, y)
 
 expandProduct :: (CommutativeRing r, Ord r, Ord v) => [NormSum r v] -> NormSum r v
-expandProduct sums = foldr multiplySum (head sums) (tail sums)
+expandProduct sums = foldl' multiplySum (head sums) (tail sums)
     where
         multiplySum :: (CommutativeRing r, Ord r, Ord v) => NormSum r v -> NormSum r v -> NormSum r v
         multiplySum (c, x) (d, y) =
@@ -472,7 +474,7 @@ expandProduct sums = foldr multiplySum (head sums) (tail sums)
 
 addSums :: (CommutativeRing r, Ord r, Ord v) => [NormSum r v] -> NormSum r v
 addSums sums =
-    let (c, bigSum) = foldr addSum (head sums) (tail sums)
+    let (c, bigSum) = foldl' addSum (head sums) (tail sums)
         sortedSum   = groupAndSort combineGroupedProducts groupByNormProduct bigSum
     in  (c, sortedSum)
     where
