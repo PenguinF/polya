@@ -176,12 +176,12 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
         extractConstantsAndAddOperands' :: CommutativeRing r => r -> [Polynomial r v] -> (r, [VarExpression r v], r)
         extractConstantsAndAddOperands' beforeProduct []                    = (r_zero, [], r_one)
         extractConstantsAndAddOperands' beforeProduct (Polynomial p d : ps) =
-            let (n, vs, d') = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) ps
-                multiplier  = beforeProduct `r_mult` d'
+            let (n, vs, afterProduct) = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) ps
+                multiplier            = beforeProduct `r_mult` afterProduct
             in case p of
-                Const m         -> ((m `r_mult` multiplier) `r_add` n, vs,                                            d `r_mult` d')
-                Expr (Add m es) -> ((m `r_mult` multiplier) `r_add` n, concat (map (distribute multiplier) es) ++ vs, d `r_mult` d')
-                Expr e          -> (n,                                 distribute multiplier e ++ vs,                 d `r_mult` d')
+                Const m         -> ((m `r_mult` multiplier) `r_add` n, vs,                                            d `r_mult` afterProduct)
+                Expr (Add m es) -> ((m `r_mult` multiplier) `r_add` n, concat (map (distribute multiplier) es) ++ vs, d `r_mult` afterProduct)
+                Expr e          -> (n,                                 distribute multiplier e ++ vs,                 d `r_mult` afterProduct)
             where
                 distribute multiplier e =
                     case e of
