@@ -394,6 +394,51 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("x(x^2+1) + x(1+x^3)",    id, "x(x³ + 1) + x(x² + 1)"),
             ("(4x²+6)³ + 2(2*3+5x*x-x²)(2³+(x(3x+x))-0y-2)²", id, "3(4x² + 6)³"),
 
+            -- Expand
+            ("(a+b)²",               expand, "a² + 2ab + b²"),
+            ("(a + b)(a - b)",       expand, "a² - b²"),
+            ("(a - b + c)(a + b)",   expand, "a² + ac - b² + bc"),
+            ("(x + 4)(x - 2)",       expand, "x² + 2x - 8"),
+            ("(a^2+2ab+b^2)(2a-b)",  expand, "2a³ + 3a²b - b³"),
+            ("(2a^2+2ab+b^2)(2a-b)", expand, "4a³ + 2a²b - b³"),
+            ("(a+1)^2",              expand, "a² + 2a + 1"),
+            ("(1-a)^3",              expand, "-a³ + 3a² - 3a + 1"),
+            -- The characteristic polynomial for all tic-tac-toe symmetries:
+            ("(e+x+c)⁹ + 4(e+x+c)³(e²+x²+c²)³ + 2(e+x+c)(e⁴+x⁴+c⁴)² + (e+x+c)(e²+x²+c²)⁴",
+             expand . pdiv 8,
+             "c⁹ + 3c⁸e + 3c⁸x + 8c⁷e² + 12c⁷ex + 8c⁷x² + 16c⁶e³ + 38c⁶e²x + 38c⁶ex² + 16c⁶x³ + 23c⁵e⁴ + 72c⁵e³x + 108c⁵e²x² + 72c⁵ex³ + 23c⁵x⁴ + 23c⁴e⁵ + 89c⁴e⁴x + 174c⁴e³x² + 174c⁴e²x³ + 89c⁴ex⁴ + 23c⁴x⁵ + 16c³e⁶ + 72c³e⁵x + 174c³e⁴x² + 228c³e³x³ + 174c³e²x⁴ + 72c³ex⁵ + 16c³x⁶ + 8c²e⁷ + 38c²e⁶x + 108c²e⁵x² + 174c²e⁴x³ + 174c²e³x⁴ + 108c²e²x⁵ + 38c²ex⁶ + 8c²x⁷ + 3ce⁸ + 12ce⁷x + 38ce⁶x² + 72ce⁵x³ + 89ce⁴x⁴ + 72ce³x⁵ + 38ce²x⁶ + 12cex⁷ + 3cx⁸ + e⁹ + 3e⁸x + 8e⁷x² + 16e⁶x³ + 23e⁵x⁴ + 23e⁴x⁵ + 16e³x⁶ + 8e²x⁷ + 3ex⁸ + x⁹"),
+
+            -- Coefficient (select only that part of the expanded polynomial
+            -- with a particular set of variables raised to some power)
+            ("-2",          coefficient [],                "-2"),
+            ("-2",          coefficient [('a',1)],         "0"),
+            ("(a+b)²",      coefficient [],                "0"),
+            ("(a+b)²",      coefficient [('a',1)],         "0"),
+            ("(a+b)²",      coefficient [('b',1)],         "0"),
+            ("(a+b)²",      coefficient [('a',1),('b',1)], "2ab"),
+            ("(a+b)²",      coefficient [('a',2)],         "a²"),
+            ("(a+b)²",      coefficient [('b',2)],         "b²"),
+            ("(a+3)⁴",      coefficient [],                "81"),
+            ("(a+3)⁴",      coefficient [('a',1)],         "108a"),
+            ("(a+3)⁴",      coefficient [('a',2)],         "54a²"),
+            ("(a+3)⁴",      coefficient [('a',3)],         "12a³"),
+            ("(a+3)⁴",      coefficient [('a',4)],         "a⁴"),
+            -- Ignore zero exponents.
+            ("(a+3)⁴",      coefficient [('a',0)],         "81"),
+            -- Correct handling of minuses which can make coefficients disappear.
+            ("(a+b)(a-b)",  coefficient [],                "0"),
+            ("(a+b)(a-b)",  coefficient [('a',1)],         "0"),
+            ("(a+b)(a-b)",  coefficient [('b',1)],         "0"),
+            ("(a+b)(a-b)",  coefficient [('a',1),('b',1)], "0"),
+            ("(a+b)(a-b)",  coefficient [('a',2)],         "a²"),
+            ("(a+b)(a-b)",  coefficient [('b',2)],         "-b²"),
+            ("-(a+b)(a-b)", coefficient [('b',2)],         "b²"),
+            -- Number of different positions with a single king on a chess board.
+            ("(k+1)⁶⁴",     coefficient [('k',1)],         "64k"),
+            -- Number of different positions with a single king on a chess board
+            -- taking symmetries into account.
+            ("2(k⁴+1)¹⁶ + 3(k²+1)³² + 2(k²+1)²⁸(k+1)⁸ + (k+1)⁶⁴", coefficient [('k',1)] . pdiv 8, "10k"),
+
             -- Basic parse tests.
             (" 0 ", id, "0"),
             (" x ", id, "x")
