@@ -111,6 +111,22 @@ sqBoardPolyaGroup n =
 
 
 
+-- Shorthand functions.
+
+-- 'make polynomial'
+-- > substituteVar 'x' (makeConst 3) (mp "x^2 + 1")
+-- 10
+mp = parseExpr . lexExpr
+
+polyOne :: Polynomial Integer Char
+polyOne = makeConst 1
+
+substVarWith1 v p = substituteVar v polyOne p
+
+substAllVarsWith1 p = substitute p (\v -> polyOne)
+
+
+
 
 -- Tokenization for parsing Polynomial Integer Char expressions.
 -- Division not supported, just use divPoly for that.
@@ -224,12 +240,6 @@ parseExpr tokens =
                     TkMinus:ts -> parseSum' e False ts
                     _          -> (e, remainder)
 
--- Shorthand for 'make polynomial'
--- > substituteVariable 'x' (makeConst 3) (mp "x^2 + 1")
--- 10
-mp = parseExpr . lexExpr
-
-
 
 
 -- Tests: create expression from string, transform, show expression.
@@ -247,16 +257,15 @@ ut = putStrLn $ unitTest 0 0 testExpressions
                        in  if expected == actual
                               then unitTest f (s+1) us
                               else "Failed test: Expected: \""
-                                   ++ expected
+                                   ++ replaceOddChars expected
                                    ++ "\" Actual: \""
-                                   ++ actual
+                                   ++ replaceOddChars actual
                                    ++ "\" Input: \""
-                                   ++ input
+                                   ++ replaceOddChars input
                                    ++ "\"\n"
                                    ++ unitTest (f+1) s us
 
         -- (Input, Transformation function, Expected)
-        -- For copy-pasting: ⁰¹²³⁴⁵⁶⁷⁸⁹
         testExpressions =
             [
             -- Exponents
@@ -274,8 +283,10 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("(2xy)^5",       id, "32x⁵y⁵"),
             ("2xy^5",         id, "2xy⁵"),
             ("-(2x^2y)^4",    id, "-16x⁸y⁴"),
+            ("(-2x^2y)^4",    id, "16x⁸y⁴"),
             ("(2x^2y(-1))^4", id, "16x⁸y⁴"),
             ("(x^5+y)^2",     id, "(x⁵ + y)²"),
+            ("(x^5+y)^2^3",   id, "(x⁵ + y)⁶"),
 
             -- Multiplication
             ("(1 (2∙3) 4) 5", id, "120"),
@@ -283,7 +294,7 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("1x",            id, "x"),
             ("10x",           id, "10x"),
             ("-x∙3",          id, "-3x"),
-            ("y(-xz)∙3",      id, "-3yxz"),
+            ("y(-xz)∙3",      id, "-3xyz"),
 
             -- Addition
             ("(1 + (2+3) + 4) + 5", id, "15"),
@@ -296,39 +307,92 @@ ut = putStrLn $ unitTest 0 0 testExpressions
             ("--4 -+-5",            id, "9"),
             ("-+4 +--5",            id, "1"),
             ("-4 - x(5 - 2)",       id, "-3x - 4"),
-            ("-y+x",                id, "-y + x"),
+            ("-y+x",                id, "x - y"),
             ("1 - x(5 - 2y)",       id, "-x(-2y + 5) + 1"),
             ("1 - x5 - 2y",         id, "-5x - 2y + 1"),
 
             -- Division
             ("6",      pdiv 1, "6"),
-            ("6",      pdiv 2, "6 / 2"), -- not "3"
+            ("6",      pdiv 2, "3"),
             ("x",      pdiv 1, "x"),
             ("x",      pdiv 2, "x / 2"),
             ("x^2",    pdiv 2, "x² / 2"),
-            ("6",      pexp 2 . pdiv 3, "36 / 9"),
+            ("6",      pexp 2 . pdiv 3, "4"),
             ("x^2",    pexp 2 . pdiv 3, "x⁴ / 9"),
             ("3x",     pdiv 2, "3x / 2"),
             ("(x⁴)3",  pdiv 2, "3x⁴ / 2"),
-            ("-8x⁴",   pdiv 2, "-8x⁴ / 2"),
+            ("-8x⁴",   pdiv 2, "-4x⁴"),
             ("-8x⁴",   cmult 0 . pdiv 2, "0"),
-            ("-8x⁴",   cmult 1 . pdiv 2, "-8x⁴ / 2"),
-            ("-8",     xmult . pdiv 2, "-8x / 2"),
-            ("-8",     cmult 3 . xmult . pdiv 2, "-24x / 2"),
-            ("-8",     cmult 3 . pdiv 2 . xmult, "-24x / 2"),
-            ("-8",     pdiv 2 . cmult 3 . xmult, "-24x / 2"),
-            ("-8",     cmult 3 . xmult . ymult . pdiv 2, "-24xy / 2"),
-            ("18y",    pmult (divPoly (makeVar 'x') 6) . pdiv 5, "18xy / 30"),
-            ("-8x",    cadd 3 . pdiv 2, "(-8x + 6) / 2"),
+            ("-8x⁴",   cmult 1 . pdiv 2, "-4x⁴"),
+            ("-8",     xmult . pdiv 2, "-4x"),
+            ("-8",     cmult 3 . xmult . pdiv 2, "-12x"),
+            ("-8",     cmult 3 . pdiv 2 . xmult, "-12x"),
+            ("-8",     pdiv 2 . cmult 3 . xmult, "-12x"),
+            ("-8",     cmult 3 . xmult . ymult . pdiv 2, "-12xy"),
+            ("18y",    pmult (divPoly (makeVar 'x') 6) . pdiv 5, "3xy / 5"),
+            ("-8x",    cadd 3 . pdiv 2, "-4x + 3"),
+            ("-8x+2y", cadd 3 . pdiv 2, "-4x + y + 3"),
+            ("-8x+y",  cadd 3 . pdiv 2, "(-8x + y + 6) / 2"),
             ("2x",     padds [divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(12x + 10y + 15z) / 30"),
-            ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
-            ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(48x + 40y + 60z + 30) / 120"),
+            ("2x",     padds [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3, divPoly (makeVar 'z') 2] . pdiv 5, "(24x + 20y + 30z + 15) / 60"),
+            ("2x",     padds [addPoly [divPoly (makeConst 1) 4, divPoly (makeVar 'y') 3], divPoly (makeVar 'z') 2] . pdiv 5, "(24x + 20y + 30z + 15) / 60"),
+
+            -- Choose least common multiple for a divisor,
+            -- both when addPoly and divPoly are the last operators to be applied.
+            ("0", buildDivAddPoly1, "(105a + 30b + 70c + 21d + 210e + 35f) / 210"),
+            ("0", buildDivAddPoly2, "(105a + 30b + 70c + 21d + 210e + 35f) / 210"),
+            ("0", buildDivAddPoly3, "(2a + 7b + 3c + 10d + e + 6f) / 6350400"),
 
             -- Substitution
             ("x+2",        substituteVar 'x' (makeConst 0), "2"),
             ("2x",         substituteVar 'x' (makeConst 0), "0"),
             ("2xy+x-3",    substituteVar 'x' (makeConst 3), "6y"),
-            ("(x-3)(x+y)", substituteVar 'x' (makeConst 2), "-(y + 2)"),
+            ("(x-3)(x+y)", substituteVar 'x' (makeConst 2), "-y - 2"),
+
+            -- Distribution of constants over sums
+            ("3(x + 2)",          id,     "3x + 6"),
+            ("3(x + 2)",          pdiv 2, "(3x + 6) / 2"),
+            ("3(x + y)",          id,     "3x + 3y"),
+            ("-(x - y)",          id,     "-x + y"),
+            ("-(2x - 2y)",        id,     "-2x + 2y"),
+            ("-(2x - (y-z))",     id,     "-2x + y - z"),
+            ("-(2x - (-y+z))",    id,     "-2x - y + z"),
+            ("-(2x + (-y+z))",    id,     "-2x + y - z"),
+            ("-2(-2x + 3(y+2z))", id,     "4x - 6y - 12z"),
+            ("-2(-2x + y(y+2z))", id,     "4x - 2y(y + 2z)"),
+            ("-y(-2x - 3(y-2z))", id,     "-y(-2x - 3y + 6z)"),
+
+            -- Ordering and grouping
+            ("3x + xx",               id, "x² + 3x"),
+            ("y + x",                 id, "x + y"),
+            ("yx",                    id, "xy"),
+            ("1 + y^2 + x",           id, "x + y² + 1"),
+            ("xx^2x",                 id, "x⁴"),
+            ("yx^2xy^2x",             id, "x⁴y³"),
+            ("(y+x)(x+y)",            id, "(x + y)²"),
+            ("(y+x)^2(x+y)",          id, "(x + y)³"),
+            ("(y+x^2)(x^2+y)",        id, "(x² + y)²"),
+            ("(2x+1)^2 * (3x+1)^2",   id, "(3x + 1)²(2x + 1)²"),
+            ("(2x+1)^2 + (3x+1)^2",   id, "(3x + 1)² + (2x + 1)²"),
+            -- Expand scalar * add expressions.
+            ("3(y+x)+4(x+y)",          id, "7x + 7y"),
+            ("6(y+x)+1(x+y)",          id, "7x + 7y"),
+            ("6(z+x)+y+z+x",           id, "7x + y + 7z"),
+            ("6(z+x)+2(x+y)+y+z+x",    id, "9x + 3y + 7z"),
+            ("4y²-7(x-y)+x²-1",        id, "x² - 7x + 4y² + 7y - 1"),
+            -- Complex grouping.
+            ("(x^2+y)^2 + 2(x+y^2)^3", id, "(x² + y)² + 2(x + y²)³"),
+            ("2(x+y^2)^3 + (x^2+y)^2", id, "(x² + y)² + 2(x + y²)³"),
+            ("(x+y^2)^3 + 2(x^2+y)^2", id, "2(x² + y)² + (x + y²)³"),
+            ("(x^2+y)^2 + 2(x+y^2)^2", id, "(x² + y)² + 2(x + y²)²"),
+            ("2(x^2+y)^2 + (x+y^2)^2", id, "2(x² + y)² + (x + y²)²"),
+            ("y(x^2+z) + y^2",         id, "y² + y(x² + z)"),
+            ("y^2 + (z+x^2)y",         id, "y² + y(x² + z)"),
+            ("(x+1)^2 * (x+2)^2",      id, "(x + 2)²(x + 1)²"),
+            ("(x+1)^2 * (2+x)^2",      id, "(x + 2)²(x + 1)²"),
+            ("(x+1)^2 * (1+x)^2",      id, "(x + 1)⁴"),
+            ("x(x^2+1) + x(1+x^3)",    id, "x(x³ + 1) + x(x² + 1)"),
+            ("(4x²+6)³ + 2(2*3+5x*x-x²)(2³+(x(3x+x))-0y-2)²", id, "3(4x² + 6)³"),
 
             -- Basic parse tests.
             (" 0 ", id, "0"),
@@ -341,5 +405,55 @@ ut = putStrLn $ unitTest 0 0 testExpressions
         xmult p = multPoly [makeVar 'x', p]
         ymult p = multPoly [makeVar 'y', p]
         pmult p q = multPoly [p, q]
-        pexp = swap expPoly
-        pdiv = swap divPoly
+        pexp = flip expPoly
+        pdiv = flip divPoly
+
+        -- "a/2 + b/7 + c/3 + d/10 + e + f/6"
+        buildDivAddPoly1 _ =
+            addPoly [
+                divPoly (makeVar 'a') 2,
+                divPoly (makeVar 'b') 7,
+                divPoly (makeVar 'c') 3,
+                divPoly (makeVar 'd') 10,
+                divPoly (makeVar 'e') 1,
+                divPoly (makeVar 'f') 6
+            ]
+
+        -- "(1260a + 360b + 840c + 252d + 2520e + 420f) / 2520"
+        -- "( 105a +  30b +  70c +  21d +  210e +  35f) / 210"
+        buildDivAddPoly2 _ =
+            divPoly (addPoly [
+                multPoly [makeVar 'a', makeConst 1260],
+                multPoly [makeVar 'b', makeConst 360],
+                multPoly [makeVar 'c', makeConst 840],
+                multPoly [makeVar 'd', makeConst 252],
+                multPoly [makeVar 'e', makeConst 2520],
+                multPoly [makeVar 'f', makeConst 420]
+            ]) 2520
+
+        -- "(a/1260 + b/360 + c/840 + d/252 + e/2520 + f/420) / 2520"
+        -- "(2a + 7b + 3c + 10d + e + 6f) / 6350400"
+        buildDivAddPoly3 _ =
+           divPoly (addPoly [
+               divPoly (makeVar 'a') 1260,
+               divPoly (makeVar 'b') 360,
+               divPoly (makeVar 'c') 840,
+               divPoly (makeVar 'd') 252,
+               divPoly (makeVar 'e') 2520,
+               divPoly (makeVar 'f') 420
+           ]) 2520
+
+        -- Because WinGHCi cannot show these characters.
+        replaceOddChars [] = []
+        replaceOddChars (x:xs) = replaceOddChar x ++ replaceOddChars xs
+
+        replaceOddChar '⁰' = "^0"
+        replaceOddChar '⁴' = "^4"
+        replaceOddChar '⁵' = "^5"
+        replaceOddChar '⁶' = "^6"
+        replaceOddChar '⁷' = "^7"
+        replaceOddChar '⁸' = "^8"
+        replaceOddChar '⁹' = "^9"
+
+        replaceOddChar '∙' = "*"
+        replaceOddChar x   = [x]

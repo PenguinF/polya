@@ -10,10 +10,15 @@ module Eutherion.CommutativeRing (
        r_abs,
        r_ones,
        r_exp,
-       r_gcd
+
+       r_gcd_div,
+       r_gcd,
+       r_div_by_gcd,
+       gcd_integral
 
        ) where
 
+import Eutherion.Utilities
 
 -- Structures functions according to these laws:
 -- (x + y) + z === x + (y + z)
@@ -45,6 +50,8 @@ class Eq a => CommutativeRing a where
 
     -- Repeatedly adds r_one to itself, like a multiplication.
     -- Essentially defines a morphism between integers and the set of operands of the ring.
+    -- It is used for converting Integer binomial coefficients to ring elements
+    -- in the 'expand' function.
     -- Instances can override with more efficient implementations.
     r_ones :: Integer -> a
     r_ones n
@@ -62,16 +69,41 @@ class Eq a => CommutativeRing a where
         | n == 1    = x
         | otherwise = x `r_mult` (r_exp x (n - 1))
 
-    -- Finds the GCD of two elements using Euclid's algorithm.
-    r_gcd :: a -> a -> a
-    r_gcd x y = r_gcd' (r_abs x) (r_abs y)
-        where
-            r_gcd' x y
-                | y == r_zero             = x
-                | r_isNegative difference = r_gcd' y x
-                | otherwise               = r_gcd' x y
-                where
-                    difference = r_add x (r_min y)
+    -- r_gcd_div x y returns a triple (gcd, x', y'), with properties:
+    -- gcd `r_mult` x' == x
+    -- gcd `r_mult` y' == y
+    -- gcd is the 'largest' element for which this is true.
+    --
+    -- Warning:
+    -- If the ring contains zero-divisors, i.e. elements x for which
+    -- there exists some y such that x `r_mult` y -> r_zero, this
+    -- function -must- always return (r_one, x, y).
+    r_gcd_div :: a -> a -> (a, a, a)
+    r_gcd_div x y = (r_one, x, y)
+
+
+-- Returns the GCD of two ring elements.
+r_gcd :: CommutativeRing a => a -> a -> a
+r_gcd x y = fst3 $ r_gcd_div x y
+
+-- 'Divides' two ring elements by their GCD.
+-- If one of them is 0 (r_zero), leaves the elements unchanged.
+r_div_by_gcd :: CommutativeRing a => a -> a -> (a, a)
+r_div_by_gcd x y = (qx, qy)
+    where (gcd, qx, qy) = r_gcd_div x y
+
+-- Fast GCD function for integral types based on Euclid's algorithm
+-- which uses the mod function.
+gcd_integral :: Integral a => a -> a -> (a, a, a)
+gcd_integral x y =
+    let gcd = gcd_integral' (abs x) (abs y)
+    in  (gcd, x `div` gcd, y `div` gcd)
+    where
+        gcd_integral' x y
+            | y == 0    = x
+            | x < y     = gcd_integral' y x
+            | otherwise = gcd_integral' y (x `mod` y)
+
 
 instance CommutativeRing Integer where
     r_add        = (+)
@@ -83,6 +115,7 @@ instance CommutativeRing Integer where
     r_exp        = (^)
     r_isNegative = (< 0)
     r_abs        = abs
+    r_gcd_div    = gcd_integral
 
 instance CommutativeRing Int where
     r_add        = (+)
@@ -94,6 +127,7 @@ instance CommutativeRing Int where
     r_exp        = (^)
     r_isNegative = (< 0)
     r_abs        = abs
+    r_gcd_div    = gcd_integral
 
 instance CommutativeRing Bool where
     r_add False False = False

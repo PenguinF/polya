@@ -54,15 +54,21 @@ multinom n ks =
 choose :: [a] -> Integer -> [(Integer, [(Integer, a)])]
 choose items n =
     let k = toInteger $ length items
-    in  [(multinom n distinctSum, zip distinctSum items) | distinctSum <- reverse $ genDistinctSums n k]
+    in  map coefficientAndDistribution $ genDistinctSums n k
     where
+        coefficientAndDistribution distinctSum = (multinom n distinctSum, zip distinctSum items)
+
         -- Generates all distinct combinations of k integers which add up to a total of n.
-        genDistinctSums :: (Eq a, Enum a, Num a, Eq b, Num b) => a -> b -> [[a]]
         genDistinctSums n k =
             case (n, k) of
                 (0, 0) -> [[]]  -- Sum matches total exactly, accept, so yield an empty (valid) solution.
                 (_, 0) -> []    -- Sum does not match total, reject, so yield nothing at all.
-                (n, k) -> [i : xs | i <- [0..n], xs <- genDistinctSums (n - i) (k - 1)]
+                (n, k) -> [i : xs | i <- decreasingRange n 0, xs <- genDistinctSums (n - i) (k - 1)]
+
+        decreasingRange max min
+            | max < min = []
+            | otherwise = max : decreasingRange (max - 1) min
+
 
 -- Represents a finite group, with these identities:
 -- (n == ctSize, t == ctOperationTable, v == ctInverseTable, i == ctIdentityElement)

@@ -1,6 +1,5 @@
 module Eutherion.Utilities (
 
-       swap,
        fst3,
        snd3,
        thd3,
@@ -11,14 +10,12 @@ module Eutherion.Utilities (
        padRight,
        conditionalElem,
        listToSimpleArray,
-       joinList
+       joinList,
+       groupAndSort
 
        ) where
 
 import Data.Array
-
-swap :: (a -> b -> c) -> b -> a -> c
-swap f x y = f y x
 
 fst3 :: (a, b, c) -> a
 fst3 (x, y, z) = x
@@ -102,3 +99,26 @@ joinList infixFn showFn elements =
             case elements of
                 []    -> showFn x1
                 x2:xs -> showFn x1 ++ infixFn x1 x2 ++ joinListInner infixFn showFn x2 xs
+
+-- Allows quick-sorting with a custom function to deal with groups of equal elements.
+groupAndSort :: (a -> [a] -> [b])     -- Function applied on a pivot element and all other elements from the list equal to it,
+                                      -- which returns a list of result elements to add between smaller and greater elements.
+             -> (a -> a -> Ordering)  -- Function to compare two elements.
+             -> [a]                   -- List of elements to group.
+             -> [b]                   -- Returns the sorted list of grouped elements.
+groupAndSort _ _ [] = []
+groupAndSort fn cmp (pivot:xs) =
+    let (smaller, equal, greater) = pivotForQSort cmp pivot xs
+    in  groupAndSort fn cmp smaller
+        ++ fn pivot equal
+        ++ groupAndSort fn cmp greater
+    where
+        -- Divides a list into three based on a pivot element and a custom ordering function on its elements.
+        pivotForQSort :: (a -> b -> Ordering) -> b -> [a] -> ([a], [a], [a])
+        pivotForQSort _ _ [] = ([], [], [])
+        pivotForQSort cmp pivot (x:xs) =
+            let (smaller, equal, greater) = pivotForQSort cmp pivot xs
+            in  case cmp x pivot of
+                    LT -> (x:smaller, equal, greater)
+                    EQ -> (smaller, x:equal, greater)
+                    GT -> (smaller, equal, x:greater)

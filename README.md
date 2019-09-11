@@ -35,5 +35,3 @@ Ok, five modules loaded.
 Ok, six modules loaded.
 *Main>
 ```
-
-Check back in a month or so for the part about Pólya's enumeration theorem.
