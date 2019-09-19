@@ -42,7 +42,7 @@ cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots namedFns) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = length namedFns
-        infos        = map (getInfo slots) applied
+        infos        = map getInfo applied
         identity     = case findIndex fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
@@ -63,7 +63,7 @@ cayleyTable (PolyaGroup slots namedFns) =
                         _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
-        getInfo slots (firstFnName, slots') =
+        getInfo (firstFnName, slots') =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
