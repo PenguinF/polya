@@ -16,7 +16,7 @@ import Eutherion.Combinatorics
 import Eutherion.CommutativeRing
 import Eutherion.Polynomial
 
--- Encapsulates a list of elements, and a list of symmetry operations acting on those elements.
+-- Encapsulates a list of elements, and a list of named symmetry operations acting on those elements.
 data PolyaGroup a = PolyaGroup [a] [(String, a -> a)]
 
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
