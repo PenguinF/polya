@@ -30,7 +30,7 @@ instance Show (PolyaGroup a) where
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots namedFns) =
     -- Apply each symmetry operation on each element in 'slots'.
-    let n            = length fns
+    let n            = length namedFns
         infos        = map (getInfo slots) applied
         identity     = case findIndex fst3 infos of
                            Just x  -> x
@@ -39,8 +39,6 @@ cayleyTable (PolyaGroup slots namedFns) =
         inverseTable = listToZeroIndexedArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
-        fns = map snd namedFns
-
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
         -- For readability. Applies all symmetry functions on all slots.
@@ -60,7 +58,7 @@ cayleyTable (PolyaGroup slots namedFns) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = [[fn slot' | slot' <- slots'] | fn <- fns]
+                secondFnApplied = [[fn slot' | slot' <- slots'] | fn <- map snd namedFns]
                 thirdFnIndexes =
                     [(j, findThirdFn j slots'') | (j, slots'') <- zip [0..] secondFnApplied]
                     where
