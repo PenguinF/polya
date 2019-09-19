@@ -42,7 +42,7 @@ cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = lengthZeroBasedIndexArray symmetries
-        infos        = map getInfo applied
+        infos        = map getInfo $ elems applied
         identity     = case findIndex fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
@@ -51,10 +51,10 @@ cayleyTable (PolyaGroup slots symmetries) =
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
         -- For readability. Applies all symmetry functions on all slots.
-        applyNamedFnsOnAllSlots slots = elems . fmap (fmap (flip fmap slots))
+        applyNamedFnsOnAllSlots slots = fmap (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map assertClosed $ applyNamedFnsOnAllSlots slots symmetries
+        applied = fmap assertClosed $ applyNamedFnsOnAllSlots slots symmetries
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed namedSlots@(fnName, slots') =
@@ -64,14 +64,14 @@ cayleyTable (PolyaGroup slots symmetries) =
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
         getInfo (firstFnName, slots') =
-            (isIdentity, thirdFnIndexes, inverse)
+            (isIdentity, elems thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
                 secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
-                thirdFnIndexes = map findThirdFn secondFnApplied
+                thirdFnIndexes = fmap findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
-                            case elemIndex slots'' (map snd applied) of
+                            case elemIndex slots'' $ elems $ fmap snd applied of
                                 Just x  -> x
                                 Nothing -> error ("The symmetry group is not closed. Symmetry '"
                                                   ++ secondFnName
@@ -79,7 +79,7 @@ cayleyTable (PolyaGroup slots symmetries) =
                                                   ++ firstFnName
                                                   ++ "' is not equal to any other symmetry.")
                 inverse =
-                    case elemIndex slots (map snd secondFnApplied) of
+                    case elemIndex slots $ elems $ fmap snd secondFnApplied of
                         Just x  -> x
                         Nothing -> error ("Symmetry '" ++ firstFnName ++ "' has no inverse.")
 
