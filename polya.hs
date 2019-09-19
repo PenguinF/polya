@@ -47,10 +47,10 @@ cayleyTable (PolyaGroup slots namedFns) =
         applyNamedFnsOnAllSlots slots = map (fmap (flip map slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map (\namedFn -> assertClosed (fst namedFn) slots $ snd namedFn) $ applyNamedFnsOnAllSlots slots namedFns
+        applied = map assertClosed $ applyNamedFnsOnAllSlots slots namedFns
             where
                 -- Checks if each function maps each slot onto another slot from the list.
-                assertClosed fnName slots slots' =
+                assertClosed (fnName, slots') =
                     case all (flip elem slots) slots' of
                         True -> slots'
                         _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
