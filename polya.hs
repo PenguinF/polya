@@ -44,7 +44,7 @@ cayleyTable (PolyaGroup slots namedFns) =
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map (\namedFn -> assertClosed (fst namedFn) slots (map (snd namedFn) slots)) namedFns
+        applied = map (\namedFn -> assertClosed (fst namedFn) slots $ snd namedFn) $ map (fmap (flip map slots)) namedFns
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed fnName slots slots' =
