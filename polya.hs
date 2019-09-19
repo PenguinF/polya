@@ -21,7 +21,7 @@ import Eutherion.Polynomial
 -- Encapsulates a list of elements, and a list of named symmetry operations acting on those elements.
 data PolyaGroup a = PolyaGroup {
     pgSlots      :: Array Int a,
-    pgSymmetries :: [(String, a -> a)]
+    pgSymmetries :: Array Int (String, a -> a)
 }
 
 -- (Private)
@@ -31,17 +31,17 @@ listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 lengthZeroBasedIndexArray = (+1) . snd . bounds
 
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
-makePolyaGroup slots symmetries = PolyaGroup (listToZeroIndexedArray slots) symmetries
+makePolyaGroup slots symmetries = PolyaGroup (listToZeroIndexedArray slots) (listToZeroIndexedArray symmetries)
 
 instance Show (PolyaGroup a) where
     show (PolyaGroup slots symmetries) =  "Number of slots: " ++ show (lengthZeroBasedIndexArray slots) ++ "\n"
-                                       ++ "Number of symmetries: " ++ show (length symmetries)
+                                       ++ "Number of symmetries: " ++ show (lengthZeroBasedIndexArray symmetries)
 
 -- Builds a Cayley table of a symmetry group, if it is indeed a group. Errors otherwise.
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
-    let n            = length symmetries
+    let n            = lengthZeroBasedIndexArray symmetries
         infos        = map getInfo applied
         identity     = case findIndex fst3 infos of
                            Just x  -> x
@@ -54,7 +54,7 @@ cayleyTable (PolyaGroup slots symmetries) =
         applyNamedFnsOnAllSlots slots = map (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map assertClosed $ applyNamedFnsOnAllSlots slots symmetries
+        applied = map assertClosed $ applyNamedFnsOnAllSlots slots $ elems symmetries
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed namedSlots@(fnName, slots') =
@@ -67,7 +67,7 @@ cayleyTable (PolyaGroup slots symmetries) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
+                secondFnApplied = applyNamedFnsOnAllSlots slots' $ elems symmetries
                 thirdFnIndexes = map findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
@@ -103,7 +103,7 @@ orbit f x = x : (takeWhile (/= x) $ tail $ iterate f x)
 -- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
 characteristic :: (Eq a, Ord b) => PolyaGroup a -> [b] -> Polynomial Integer b
 characteristic (PolyaGroup slots symmetries) cs =
-    divPoly (genExpression symmetries) (toInteger $ length symmetries)
+    divPoly (genExpression symmetries) (toInteger $ lengthZeroBasedIndexArray symmetries)
     where
         -- For sqBoardPolyaGroup 3, '(removeSharedOrbits . sort . orbitLengths) symmetry'
         -- has these values for all 8 symmetries:
@@ -125,4 +125,4 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- Generates e.g. e^4 + o^4 + x^4
         selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
-        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths . snd)
+        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths . snd) . elems
