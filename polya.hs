@@ -42,12 +42,12 @@ cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = lengthZeroBasedIndexArray symmetries
-        infos        = map getInfo $ elems applied
-        identity     = case findIndex fst3 infos of
+        infos        = fmap getInfo applied
+        identity     = case findIndex fst3 $ elems infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
-        multTable    = listToZeroIndexedArray $ map (listToZeroIndexedArray . snd3) infos
-        inverseTable = listToZeroIndexedArray $ map thd3 infos
+        multTable    = listToZeroIndexedArray $ elems $ fmap (listToZeroIndexedArray . elems . snd3) infos
+        inverseTable = listToZeroIndexedArray $ elems $ fmap thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
         -- For readability. Applies all symmetry functions on all slots.
@@ -64,7 +64,7 @@ cayleyTable (PolyaGroup slots symmetries) =
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
         getInfo (firstFnName, slots') =
-            (isIdentity, elems thirdFnIndexes, inverse)
+            (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
                 secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
