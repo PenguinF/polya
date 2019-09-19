@@ -41,20 +41,19 @@ instance Show (PolyaGroup a) where
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
-    let n            = lengthZeroBasedIndexArray symmetries
-        infos        = fmap getInfo applied
+    let infos        = fmap getInfo applied
         identity     = case findArrayIndexBy fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
         multTable    = fmap snd3 infos
         inverseTable = fmap thd3 infos
-    in  buildCayleyTableOptimistic n identity multTable inverseTable
+    in  buildCayleyTableOptimistic (lengthZeroBasedIndexArray symmetries) identity multTable inverseTable
     where
         -- For readability. Applies all symmetry functions on all slots.
-        applyNamedFnsOnAllSlots slots = fmap (fmap (flip fmap slots))
+        applySymmetriesToAllSlots slots = fmap (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = fmap assertClosed $ applyNamedFnsOnAllSlots slots symmetries
+        applied = fmap assertClosed $ applySymmetriesToAllSlots slots symmetries
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed namedSlots@(fnName, slots') =
@@ -67,7 +66,7 @@ cayleyTable (PolyaGroup slots symmetries) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
+                secondFnApplied = applySymmetriesToAllSlots slots' symmetries
                 thirdFnIndexes = fmap findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
