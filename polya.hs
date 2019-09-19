@@ -17,10 +17,10 @@ import Eutherion.CommutativeRing
 import Eutherion.Polynomial
 
 -- Encapsulates a list of elements, and a list of symmetry operations acting on those elements.
-data PolyaGroup a = PolyaGroup [a] [a -> a]
+data PolyaGroup a = PolyaGroup [a] [(String, a -> a)]
 
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
-makePolyaGroup slots fns = PolyaGroup slots (map snd fns)
+makePolyaGroup slots fns = PolyaGroup slots fns
 
 instance Show (PolyaGroup a) where
     show (PolyaGroup slots fns) =  "Number of slots: " ++ show (length slots) ++ "\n"
@@ -28,7 +28,7 @@ instance Show (PolyaGroup a) where
 
 -- Builds a Cayley table of a symmetry group, if it is indeed a group. Errors otherwise.
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
-cayleyTable (PolyaGroup slots fns) =
+cayleyTable (PolyaGroup slots namedFns) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = length fns
         infos        = [getInfo slots slots' | slots' <- zip [0..] applied]
@@ -39,6 +39,8 @@ cayleyTable (PolyaGroup slots fns) =
         inverseTable = listToZeroIndexedArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
+        fns = map snd namedFns
+
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
         applied = [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
@@ -109,4 +111,4 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- Generates e.g. e^4 + o^4 + x^4
         selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
-        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths)
+        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths . snd)
