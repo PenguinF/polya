@@ -54,7 +54,7 @@ cayleyTable (PolyaGroup slots namedFns) =
                         _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
-        getInfo slots (fnName, slots') =
+        getInfo slots (firstFnName, slots') =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
@@ -65,11 +65,11 @@ cayleyTable (PolyaGroup slots namedFns) =
                         findThirdFn j slots'' =
                             case elemIndex slots'' (map snd applied) of
                                 Just x  -> x
-                                Nothing -> error ("Function " ++ show j ++ " applied after function '" ++ fnName ++ "' is either not associative, or not closed")
+                                Nothing -> error ("Function " ++ show j ++ " applied after function '" ++ firstFnName ++ "' is either not associative, or not closed")
                 inverse =
                     case elemIndex slots (map snd secondFnApplied) of
                         Just x  -> x
-                        Nothing -> error ("Symmetry '" ++ fnName ++ "' has no inverse.")
+                        Nothing -> error ("Symmetry '" ++ firstFnName ++ "' has no inverse.")
 
 
 -- Returns the orbit of a value 'x' under function 'f',
