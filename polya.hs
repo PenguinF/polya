@@ -44,14 +44,13 @@ cayleyTable (PolyaGroup slots namedFns) =
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map (\namedFn -> assertClosed (fst namedFn) slots (zip [0..] $ map (snd namedFn) slots)) namedFns
+        applied = map (\namedFn -> assertClosed (fst namedFn) slots (map (snd namedFn) slots)) namedFns
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed fnName slots slots' =
-                    let resultInSlots = [(i, elem x slots) | (i, x) <- slots']
-                    in  case all snd resultInSlots of
-                            True -> map snd slots'
-                            _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
+                    case all (flip elem slots) slots' of
+                        True -> slots'
+                        _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
         getInfo slots (i, slots') =
