@@ -2,6 +2,9 @@ module Eutherion.Polya (
 
        PolyaGroup,
        makePolyaGroup,
+       pgSlots,
+       pgSymmetries,
+
        cayleyTable,
        orbit,
        characteristic
@@ -16,7 +19,10 @@ import Eutherion.Combinatorics
 import Eutherion.Polynomial
 
 -- Encapsulates a list of elements, and a list of named symmetry operations acting on those elements.
-data PolyaGroup a = PolyaGroup [a] [(String, a -> a)]
+data PolyaGroup a = PolyaGroup {
+    pgSlots      :: [a],
+    pgSymmetries :: [(String, a -> a)]
+}
 
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
 makePolyaGroup slots fns = PolyaGroup slots fns
