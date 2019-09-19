@@ -20,18 +20,21 @@ import Eutherion.Polynomial
 
 -- Encapsulates a list of elements, and a list of named symmetry operations acting on those elements.
 data PolyaGroup a = PolyaGroup {
-    pgSlots      :: [a],
+    pgSlots      :: Array Int a,
     pgSymmetries :: [(String, a -> a)]
 }
 
-makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
-makePolyaGroup slots fns = PolyaGroup slots fns
+-- (Private)
+listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
 -- (Private)
 lengthZeroBasedIndexArray = (+1) . snd . bounds
 
+makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
+makePolyaGroup slots fns = PolyaGroup (listToZeroIndexedArray slots) fns
+
 instance Show (PolyaGroup a) where
-    show (PolyaGroup slots fns) =  "Number of slots: " ++ show (length slots) ++ "\n"
+    show (PolyaGroup slots fns) =  "Number of slots: " ++ show (lengthZeroBasedIndexArray slots) ++ "\n"
                                 ++ "Number of symmetries: " ++ show (length fns)
 
 -- Builds a Cayley table of a symmetry group, if it is indeed a group. Errors otherwise.
@@ -47,10 +50,8 @@ cayleyTable (PolyaGroup slots namedFns) =
         inverseTable = listToZeroIndexedArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
-        listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
-
         -- For readability. Applies all symmetry functions on all slots.
-        applyNamedFnsOnAllSlots slots = map (fmap (flip map slots))
+        applyNamedFnsOnAllSlots slots = map (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
         applied = map assertClosed $ applyNamedFnsOnAllSlots slots namedFns
@@ -114,7 +115,7 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- [1,4,4]
         -- [1,2,2,2,2]
         -- [1,4,4]
-        orbitLengths symmetry = removeSharedOrbits $ sort $ map (length . orbit symmetry) slots
+        orbitLengths symmetry = removeSharedOrbits $ sort $ elems $ fmap (length . orbit symmetry) slots
 
         removeSharedOrbits os =
             case os of
