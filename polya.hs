@@ -31,17 +31,17 @@ listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 lengthZeroBasedIndexArray = (+1) . snd . bounds
 
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
-makePolyaGroup slots fns = PolyaGroup (listToZeroIndexedArray slots) fns
+makePolyaGroup slots symmetries = PolyaGroup (listToZeroIndexedArray slots) symmetries
 
 instance Show (PolyaGroup a) where
-    show (PolyaGroup slots fns) =  "Number of slots: " ++ show (lengthZeroBasedIndexArray slots) ++ "\n"
-                                ++ "Number of symmetries: " ++ show (length fns)
+    show (PolyaGroup slots symmetries) =  "Number of slots: " ++ show (lengthZeroBasedIndexArray slots) ++ "\n"
+                                       ++ "Number of symmetries: " ++ show (length symmetries)
 
 -- Builds a Cayley table of a symmetry group, if it is indeed a group. Errors otherwise.
 cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
-cayleyTable (PolyaGroup slots namedFns) =
+cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
-    let n            = length namedFns
+    let n            = length symmetries
         infos        = map getInfo applied
         identity     = case findIndex fst3 infos of
                            Just x  -> x
@@ -54,7 +54,7 @@ cayleyTable (PolyaGroup slots namedFns) =
         applyNamedFnsOnAllSlots slots = map (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map assertClosed $ applyNamedFnsOnAllSlots slots namedFns
+        applied = map assertClosed $ applyNamedFnsOnAllSlots slots symmetries
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed namedSlots@(fnName, slots') =
@@ -67,7 +67,7 @@ cayleyTable (PolyaGroup slots namedFns) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = applyNamedFnsOnAllSlots slots' namedFns
+                secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
                 thirdFnIndexes = map findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
