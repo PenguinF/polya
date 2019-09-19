@@ -13,7 +13,6 @@ import Data.List
 
 import Eutherion.Utilities
 import Eutherion.Combinatorics
-import Eutherion.CommutativeRing
 import Eutherion.Polynomial
 
 -- Encapsulates a list of elements, and a list of named symmetry operations acting on those elements.
