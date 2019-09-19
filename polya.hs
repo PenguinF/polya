@@ -43,8 +43,10 @@ cayleyTable (PolyaGroup slots namedFns) =
 
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
+        -- Applies each symmetry operation on each element in 'slots'.
         applied = [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
             where
+                -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed slots slots' =
                     let resultInSlots = [(i, elem x slots) | (i, x) <- slots']
                     in  case all snd resultInSlots of
