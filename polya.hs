@@ -35,7 +35,7 @@ cayleyTable (PolyaGroup slots namedFns) =
         identity     = case findIndex fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
-        multTable    = listToZeroIndexedArray [array (0, n - 1) t | t <- map snd3 infos]
+        multTable    = listToZeroIndexedArray $ map (listToZeroIndexedArray . snd3) infos
         inverseTable = listToZeroIndexedArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
@@ -59,10 +59,9 @@ cayleyTable (PolyaGroup slots namedFns) =
             where
                 isIdentity = slots == slots'
                 secondFnApplied = applyNamedFnsOnAllSlots slots' namedFns
-                thirdFnIndexes =
-                    zip [0..] [findThirdFn secondFnName slots'' | (secondFnName, slots'') <- secondFnApplied]
+                thirdFnIndexes = map findThirdFn secondFnApplied
                     where
-                        findThirdFn secondFnName slots'' =
+                        findThirdFn (secondFnName, slots'') =
                             case elemIndex slots'' (map snd applied) of
                                 Just x  -> x
                                 Nothing -> error ("The symmetry group is not closed. Symmetry '"
