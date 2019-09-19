@@ -51,10 +51,10 @@ cayleyTable (PolyaGroup slots symmetries) =
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
         -- For readability. Applies all symmetry functions on all slots.
-        applyNamedFnsOnAllSlots slots = map (fmap (flip fmap slots))
+        applyNamedFnsOnAllSlots slots = elems . fmap (fmap (flip fmap slots))
 
         -- Applies each symmetry operation on each element in 'slots'.
-        applied = map assertClosed $ applyNamedFnsOnAllSlots slots $ elems symmetries
+        applied = map assertClosed $ applyNamedFnsOnAllSlots slots symmetries
             where
                 -- Checks if each function maps each slot onto another slot from the list.
                 assertClosed namedSlots@(fnName, slots') =
@@ -67,7 +67,7 @@ cayleyTable (PolyaGroup slots symmetries) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = applyNamedFnsOnAllSlots slots' $ elems symmetries
+                secondFnApplied = applyNamedFnsOnAllSlots slots' symmetries
                 thirdFnIndexes = map findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
@@ -125,4 +125,4 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- Generates e.g. e^4 + o^4 + x^4
         selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
-        genExpression = addPoly . map (multPoly . map selectOneValue . orbitLengths . snd) . elems
+        genExpression = addPoly . map multPoly . elems . fmap (map selectOneValue . orbitLengths . snd)
