@@ -58,16 +58,16 @@ cayleyTable (PolyaGroup slots namedFns) =
             (isIdentity, thirdFnIndexes, inverse)
             where
                 isIdentity = slots == slots'
-                secondFnApplied = [[fn slot' | slot' <- slots'] | fn <- map snd namedFns]
+                secondFnApplied = applyNamedFnsOnAllSlots slots' namedFns
                 thirdFnIndexes =
-                    [(j, findThirdFn j slots'') | (j, slots'') <- zip [0..] secondFnApplied]
+                    [(j, findThirdFn j slots'') | (j, slots'') <- zip [0..] (map snd secondFnApplied)]
                     where
                         findThirdFn j slots'' =
                             case elemIndex slots'' (map snd applied) of
                                 Just x  -> x
                                 Nothing -> error ("Function " ++ show j ++ " applied after function '" ++ fnName ++ "' is either not associative, or not closed")
                 inverse =
-                    case elemIndex slots secondFnApplied of
+                    case elemIndex slots (map snd secondFnApplied) of
                         Just x  -> x
                         Nothing -> error ("Symmetry '" ++ fnName ++ "' has no inverse.")
 
