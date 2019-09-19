@@ -27,6 +27,9 @@ data PolyaGroup a = PolyaGroup {
 makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
 makePolyaGroup slots fns = PolyaGroup slots fns
 
+-- (Private)
+lengthZeroBasedIndexArray = (+1) . snd . bounds
+
 instance Show (PolyaGroup a) where
     show (PolyaGroup slots fns) =  "Number of slots: " ++ show (length slots) ++ "\n"
                                 ++ "Number of symmetries: " ++ show (length fns)
