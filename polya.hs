@@ -31,7 +31,7 @@ cayleyTable :: Eq a => PolyaGroup a -> CayleyTable
 cayleyTable (PolyaGroup slots namedFns) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = length fns
-        infos        = [getInfo slots slots' | slots' <- zip [0..] applied]
+        infos        = [getInfo slots slots' | slots' <- zip [0..] (map snd applied)]
         identity     = case findIndex fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
@@ -50,9 +50,9 @@ cayleyTable (PolyaGroup slots namedFns) =
         applied = map assertClosed $ applyNamedFnsOnAllSlots slots namedFns
             where
                 -- Checks if each function maps each slot onto another slot from the list.
-                assertClosed (fnName, slots') =
+                assertClosed namedSlots@(fnName, slots') =
                     case all (flip elem slots) slots' of
-                        True -> slots'
+                        True -> namedSlots
                         _    -> error ("Symmetry '" ++ fnName ++ "' does not map onto the range of slots.")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
@@ -65,7 +65,7 @@ cayleyTable (PolyaGroup slots namedFns) =
                     [(j, findThirdFn j slots'') | (j, slots'') <- zip [0..] secondFnApplied]
                     where
                         findThirdFn j slots'' =
-                            case elemIndex slots'' applied of
+                            case elemIndex slots'' (map snd applied) of
                                 Just x  -> x
                                 Nothing -> error ("Function " ++ show j ++ " applied after function " ++ show i ++ " is either not associative, or not closed")
                 inverse =
