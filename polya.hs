@@ -60,12 +60,16 @@ cayleyTable (PolyaGroup slots namedFns) =
                 isIdentity = slots == slots'
                 secondFnApplied = applyNamedFnsOnAllSlots slots' namedFns
                 thirdFnIndexes =
-                    [(j, findThirdFn j slots'') | (j, slots'') <- zip [0..] (map snd secondFnApplied)]
+                    zip [0..] [findThirdFn secondFnName slots'' | (secondFnName, slots'') <- secondFnApplied]
                     where
-                        findThirdFn j slots'' =
+                        findThirdFn secondFnName slots'' =
                             case elemIndex slots'' (map snd applied) of
                                 Just x  -> x
-                                Nothing -> error ("Function " ++ show j ++ " applied after function '" ++ firstFnName ++ "' is either not associative, or not closed")
+                                Nothing -> error ("The symmetry group is not closed. Symmetry '"
+                                                  ++ secondFnName
+                                                  ++ "' applied after '"
+                                                  ++ firstFnName
+                                                  ++ "' is not equal to any other symmetry.")
                 inverse =
                     case elemIndex slots (map snd secondFnApplied) of
                         Just x  -> x
