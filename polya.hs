@@ -41,20 +41,13 @@ cayleyTable (PolyaGroup slots fns) =
     where
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
-        applied = assertNoDuplicates $ [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
+        applied = [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
 
         assertClosed slots slots' =
             let resultInSlots = [(i, elem x slots) | (i, x) <- slots']
             in  case all snd resultInSlots of
                     True -> map snd slots'
                     _    -> error ("Function(s) " ++ intercalate ", " [show i | (i, ok) <- resultInSlots, not ok] ++ " violate(s) the binary algebra condition")
-
-        assertNoDuplicates slotsList =
-            -- Not the most efficient implementation, but is fortunately only executed once.
-            let equalSlotLists = [length [candidate | candidate <- slotsList, candidate == slots'] | slots' <- slotsList]
-            in  case all ((==) 1) equalSlotLists of
-                    True -> slotsList
-                    _    -> error ("There are duplicate functions.")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
         getInfo slots (i, slots') =
