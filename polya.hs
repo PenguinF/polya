@@ -19,8 +19,8 @@ import Eutherion.Polynomial
 -- Encapsulates a list of elements, and a list of symmetry operations acting on those elements.
 data PolyaGroup a = PolyaGroup [a] [a -> a]
 
-makePolyaGroup :: [a] -> [a -> a] -> PolyaGroup a
-makePolyaGroup slots fns = PolyaGroup slots fns
+makePolyaGroup :: [a] -> [(String, a -> a)] -> PolyaGroup a
+makePolyaGroup slots fns = PolyaGroup slots (map snd fns)
 
 instance Show (PolyaGroup a) where
     show (PolyaGroup slots fns) =  "Number of slots: " ++ show (length slots) ++ "\n"
