@@ -44,7 +44,7 @@ enumUndirectedNonReflexiveGraphEdges (UndirectedGraph vmin vmax) =
 
 enumPermuteGraphEdgeMappings :: (Enum a, Ord a) => UndirectedGraph a -> [GraphEdge a -> GraphEdge a]
 enumPermuteGraphEdgeMappings graph@(UndirectedGraph vmin _) =
-    [permuteEdge $ permuteVertex vertexPermutation | vertexPermutation <- permutations $ enumGraphVertices graph]
+    map (permuteEdge . permuteVertex) $ permutations $ enumGraphVertices graph
     where
         permuteVertex :: Enum b => [GraphVertex a] -> GraphVertex b -> GraphVertex a
         permuteVertex vs (GraphVertex n) = vs !! (fromEnum n - fromEnum vmin)
