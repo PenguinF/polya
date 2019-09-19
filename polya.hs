@@ -44,12 +44,12 @@ cayleyTable (PolyaGroup slots namedFns) =
         listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
 
         applied = [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
-
-        assertClosed slots slots' =
-            let resultInSlots = [(i, elem x slots) | (i, x) <- slots']
-            in  case all snd resultInSlots of
-                    True -> map snd slots'
-                    _    -> error ("Function(s) " ++ intercalate ", " [show i | (i, ok) <- resultInSlots, not ok] ++ " violate(s) the binary algebra condition")
+            where
+                assertClosed slots slots' =
+                    let resultInSlots = [(i, elem x slots) | (i, x) <- slots']
+                    in  case all snd resultInSlots of
+                            True -> map snd slots'
+                            _    -> error ("Function(s) " ++ intercalate ", " [show i | (i, ok) <- resultInSlots, not ok] ++ " violate(s) the binary algebra condition")
 
         -- Whether it's the identity element, multiplication table entry, inverse element index.
         getInfo slots (i, slots') =
