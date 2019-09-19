@@ -35,10 +35,12 @@ cayleyTable (PolyaGroup slots fns) =
         identity     = case findIndex fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
-        multTable    = listToSimpleArray [array (0, n - 1) t | t <- map snd3 infos]
-        inverseTable = listToSimpleArray $ map thd3 infos
+        multTable    = listToZeroIndexedArray [array (0, n - 1) t | t <- map snd3 infos]
+        inverseTable = listToZeroIndexedArray $ map thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
+        listToZeroIndexedArray xs = listArray (0, length xs - 1) xs
+
         applied = assertNoDuplicates $ [assertClosed slots (zip [0..] [fn slot | slot <- slots]) | fn <- fns]
 
         assertClosed slots slots' =

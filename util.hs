@@ -9,7 +9,6 @@ module Eutherion.Utilities (
        padLeft,
        padRight,
        conditionalElem,
-       listToSimpleArray,
        joinList,
        groupAndSort
 
@@ -80,13 +79,6 @@ conditionalElem :: Bool -> a -> [a]
 conditionalElem b c
     | b         = [c]
     | otherwise = []
-
--- Converts a list to a one-dimensional array with lower bound 0.
-listToSimpleArray :: [a] -> Array Int a
-listToSimpleArray xs =
-    let n      = length xs
-        zipped = zip [0..] xs
-    in  array (0, n - 1) zipped
 
 -- Joins a list of elements with an infix between two entries.
 joinList :: (a -> a -> [b]) -> (a -> [b]) -> [a] -> [b]
