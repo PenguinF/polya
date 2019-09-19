@@ -43,11 +43,11 @@ cayleyTable (PolyaGroup slots symmetries) =
     -- Apply each symmetry operation on each element in 'slots'.
     let n            = lengthZeroBasedIndexArray symmetries
         infos        = fmap getInfo applied
-        identity     = case findIndex fst3 $ elems infos of
+        identity     = case findArrayIndexBy fst3 infos of
                            Just x  -> x
                            Nothing -> error "No identity element found"
-        multTable    = listToZeroIndexedArray $ elems $ fmap (listToZeroIndexedArray . elems . snd3) infos
-        inverseTable = listToZeroIndexedArray $ elems $ fmap thd3 infos
+        multTable    = fmap snd3 infos
+        inverseTable = fmap thd3 infos
     in  buildCayleyTableOptimistic n identity multTable inverseTable
     where
         -- For readability. Applies all symmetry functions on all slots.
@@ -71,7 +71,7 @@ cayleyTable (PolyaGroup slots symmetries) =
                 thirdFnIndexes = fmap findThirdFn secondFnApplied
                     where
                         findThirdFn (secondFnName, slots'') =
-                            case elemIndex slots'' $ elems $ fmap snd applied of
+                            case findArrayIndex slots'' $ fmap snd applied of
                                 Just x  -> x
                                 Nothing -> error ("The symmetry group is not closed. Symmetry '"
                                                   ++ secondFnName
@@ -79,7 +79,7 @@ cayleyTable (PolyaGroup slots symmetries) =
                                                   ++ firstFnName
                                                   ++ "' is not equal to any other symmetry.")
                 inverse =
-                    case elemIndex slots $ elems $ fmap snd secondFnApplied of
+                    case findArrayIndex slots $ fmap snd secondFnApplied of
                         Just x  -> x
                         Nothing -> error ("Symmetry '" ++ firstFnName ++ "' has no inverse.")
 
@@ -125,4 +125,4 @@ characteristic (PolyaGroup slots symmetries) cs =
         -- Generates e.g. e^4 + o^4 + x^4
         selectOneValue orbitLength = addPoly [expPoly (makeVar c) (toInteger orbitLength) | c <- cs]
 
-        genExpression = addPoly . map multPoly . elems . fmap (map selectOneValue . orbitLengths . snd)
+        genExpression = addPoly . elems . fmap (multPoly . map selectOneValue . orbitLengths . snd)
