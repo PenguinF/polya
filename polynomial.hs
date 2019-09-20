@@ -152,8 +152,8 @@ makeMultPoly k es d =
 -- Extracts all constants and embedded Add expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
 -- (Private)
-extractConstantsAndAddOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
-extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
+extractConstantsAndAddOperands :: (CommutativeRing r, Foldable f) => f (Polynomial r v) -> (r, [VarExpression r v], r)
+extractConstantsAndAddOperands = foldl' addConstantsAndOperands (r_zero, [], r_one) . snd . foldl' zipWithBeforeProduct (r_one, [])
     where
         -- Say that our divisors list looks like this:
         -- [2, 3, 5, 1, 1, 3]
@@ -175,11 +175,10 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
         --
         -- The 'before' list can be done by adding an extra 'running value' parameter (beforeProduct),
         -- the 'after' list by using the returned divisor value.
-        extractConstantsAndAddOperands' :: CommutativeRing r => r -> [Polynomial r v] -> (r, [VarExpression r v], r)
-        extractConstantsAndAddOperands' beforeProduct []                    = (r_zero, [], r_one)
-        extractConstantsAndAddOperands' beforeProduct (Polynomial p d : ps) =
-            let (n, vs, afterProduct) = extractConstantsAndAddOperands' (beforeProduct `r_mult` d) ps
-                multiplier            = beforeProduct `r_mult` afterProduct
+        zipWithBeforeProduct (beforeProduct, ps) p@(Polynomial _ d) = (beforeProduct `r_mult` d, (beforeProduct, p) : ps)
+
+        addConstantsAndOperands (n, vs, afterProduct) (beforeProduct, Polynomial p d) =
+            let multiplier = beforeProduct `r_mult` afterProduct
             in case p of
                 Const m         -> ((m `r_mult` multiplier) `r_add` n, vs,                                            d `r_mult` afterProduct)
                 Expr (Add m es) -> ((m `r_mult` multiplier) `r_add` n, concat (map (distribute multiplier) es) ++ vs, d `r_mult` afterProduct)
@@ -191,7 +190,7 @@ extractConstantsAndAddOperands es = extractConstantsAndAddOperands' r_one es
                         e         -> makeMult multiplier [e]
 
 -- Adds a list of polynomials to form a new polynomial.
-addPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
+addPoly :: (CommutativeRing r, Ord r, Ord v, Foldable f) => f (Polynomial r v) -> Polynomial r v
 addPoly ps =
     case combineSum $ extractConstantsAndAddOperands ps of
         (sum, [], d)                  -> makeRational sum d
@@ -206,7 +205,7 @@ addPoly ps =
 -- Extracts all constants and embedded Mult expressions from a list of polynomials.
 -- Assumes all operands have already been normalized.
 -- (Private)
-extractConstantsAndMultOperands :: CommutativeRing r => [Polynomial r v] -> (r, [VarExpression r v], r)
+extractConstantsAndMultOperands :: (CommutativeRing r, Foldable f) => f (Polynomial r v) -> (r, [VarExpression r v], r)
 extractConstantsAndMultOperands = foldl' multConstantsAndOperands (r_one, [], r_one)
     where
         multConstantsAndOperands (n, vs, d') (Polynomial p d) =
@@ -229,7 +228,7 @@ distributeMultiplier :: (CommutativeRing r, Ord r, Ord v) => r -> r -> [VarExpre
 distributeMultiplier k c es = addPoly (makeConst (c `r_mult` k) : [multPoly [makeConst k, Polynomial (Expr e) r_one] | e <- es])
 
 -- Multiplies a list of polynomials to form a new polynomial.
-multPoly :: (CommutativeRing r, Ord r, Ord v) => [Polynomial r v] -> Polynomial r v
+multPoly :: (CommutativeRing r, Ord r, Ord v, Foldable f) => f (Polynomial r v) -> Polynomial r v
 multPoly ps =
     case combineProduct $ extractConstantsAndMultOperands ps of
         (product, [], d)                      -> makeRational product d  -- Result of e.g. substituting 2 for 'x' in '3x': substituteVar 'x' (mp "2") (mp "3x")
