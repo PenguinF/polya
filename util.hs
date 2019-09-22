@@ -9,7 +9,8 @@ module Eutherion.Utilities (
        padLeft,
        padRight,
        conditionalElem,
-       listToSimpleArray,
+       findArrayIndex,
+       findArrayIndexBy,
        joinList,
        groupAndSort
 
@@ -81,12 +82,18 @@ conditionalElem b c
     | b         = [c]
     | otherwise = []
 
--- Converts a list to a one-dimensional array with lower bound 0.
-listToSimpleArray :: [a] -> Array Int a
-listToSimpleArray xs =
-    let n      = length xs
-        zipped = zip [0..] xs
-    in  array (0, n - 1) zipped
+-- Finds the index of an element of an array.
+findArrayIndex :: (Ix a, Eq t) => t -> Array a t -> Maybe a
+findArrayIndex needle = findArrayIndexBy (==needle)
+
+-- Finds the index of an element of an array.
+findArrayIndexBy :: Ix a => (t -> Bool) -> Array a t -> Maybe a
+findArrayIndexBy predicate = findArrayIndexBy' predicate . assocs
+    where
+        findArrayIndexBy' predicate []                       = Nothing
+        findArrayIndexBy' predicate ((i, needle) : hayStack) = if predicate needle
+                                                               then Just i
+                                                               else findArrayIndexBy' predicate hayStack
 
 -- Joins a list of elements with an infix between two entries.
 joinList :: (a -> a -> [b]) -> (a -> [b]) -> [a] -> [b]

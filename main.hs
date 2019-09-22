@@ -42,9 +42,9 @@ enumUndirectedNonReflexiveGraphEdges :: (Enum a, Eq a) => UndirectedGraph a -> [
 enumUndirectedNonReflexiveGraphEdges (UndirectedGraph vmin vmax) =
     [GraphEdge (GraphVertex v) (GraphVertex w) | v <- [vmin..vmax], w <- [v..vmax], v /= w]
 
-enumPermuteGraphEdgeMappings :: (Enum a, Ord a) => UndirectedGraph a -> [GraphEdge a -> GraphEdge a]
-enumPermuteGraphEdgeMappings (UndirectedGraph vmin vmax) =
-    [permuteEdge $ permuteVertex vertexPermutation | vertexPermutation <- permutations $ enumGraphVertices (UndirectedGraph vmin vmax)]
+enumPermuteGraphEdgeMappings :: (Enum a, Ord a, Show a) => UndirectedGraph a -> [(String, GraphEdge a -> GraphEdge a)]
+enumPermuteGraphEdgeMappings graph@(UndirectedGraph vmin _) =
+    map (fmap (permuteEdge . permuteVertex)) $ namedPermutations $ enumGraphVertices graph
     where
         permuteVertex :: Enum b => [GraphVertex a] -> GraphVertex b -> GraphVertex a
         permuteVertex vs (GraphVertex n) = vs !! (fromEnum n - fromEnum vmin)
@@ -55,11 +55,17 @@ enumPermuteGraphEdgeMappings (UndirectedGraph vmin vmax) =
                 (v', w') | v' <= w'  -> GraphEdge v' w'
                          | otherwise -> GraphEdge w' v'
 
-graphPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (GraphEdge a)
+graphPolyaGroup :: (Ord a, Enum a, Num a, Show a) => a -> PolyaGroup (GraphEdge a)
 graphPolyaGroup n =
     makePolyaGroup (enumUndirectedNonReflexiveGraphEdges ug) (enumPermuteGraphEdgeMappings ug)
     where
         ug = undirectedGraph 0 (n - 1)
+
+-- Not only permutes a list but also generates display names for all permutations.
+namedPermutations :: Show a => [a] -> [(String, [a])]
+namedPermutations xs = map addName $ permutations xs
+    where
+        addName permutation = (show xs ++ " -> " ++ show permutation, permutation)
 
 
 
@@ -99,10 +105,17 @@ rotate90      n (SquareBoardCoordinate x y) = SquareBoardCoordinate y           
 rotate180     n (SquareBoardCoordinate x y) = SquareBoardCoordinate (n - 1 - x) (n - 1 - y)
 rotate270     n (SquareBoardCoordinate x y) = SquareBoardCoordinate (n - 1 - y) x
 
-enumBoardSymmetryOperations :: (Ord a, Num a) => SquareBoard a -> [SquareBoardCoordinate a -> SquareBoardCoordinate a]
+enumBoardSymmetryOperations :: (Ord a, Num a) => SquareBoard a -> [(String, SquareBoardCoordinate a -> SquareBoardCoordinate a)]
 enumBoardSymmetryOperations (SquareBoard n)
-    | n > 1     = [symmetryId n, vFlip n, hFlip n, slashFlip n, backSlashFlip n, rotate90 n, rotate180 n, rotate270 n]
-    | otherwise = [symmetryId n]  -- trivial group
+    | n > 1     = [("id",                 symmetryId n),
+                   ("vertical flip",      vFlip n),
+                   ("horizontal flip",    hFlip n),
+                   ("slash flip",         slashFlip n),
+                   ("backslash flip",     backSlashFlip n),
+                   ("rotate 90 degrees",  rotate90 n),
+                   ("rotate 180 degrees", rotate180 n),
+                   ("rotate 270 degrees", rotate270 n)]
+    | otherwise = [("id",                 symmetryId n)]  -- trivial group
 
 sqBoardPolyaGroup :: (Ord a, Enum a, Num a) => a -> PolyaGroup (SquareBoardCoordinate a)
 sqBoardPolyaGroup n =
