@@ -6,7 +6,11 @@ module Eutherion.Polya (
        pgSymmetries,
 
        cayleyTable,
+
        orbit,
+       Cycle,
+       cycleSize,
+       cycleIndex,
        characteristic
 
        ) where
@@ -91,17 +95,27 @@ cayleyTable (PolyaGroup slots symmetries) =
 orbit :: Eq a => (a -> a) -> a -> [a]
 orbit f x = x : (takeWhile (/= x) $ tail $ iterate f x)
 
+data Cycle = Cycle { cycleSize :: Integer }
 
--- Returns the characteristic polynomial for a Pólya group and a number of choices represented by characters.
+instance  Eq Cycle where
+    (==) (Cycle m) (Cycle n) = m == n
+    (/=) (Cycle m) (Cycle n) = m /= n
+
+-- Reverse order because polynomials are sorted from largest to smallest contributor.
+instance Ord Cycle where
+    compare (Cycle m) (Cycle n) = compare n m
+
+instance ShowablePolynomialVariable Cycle where
+    showVar (Cycle n) = "a[" ++ show n ++ "]"
+
+-- Returns the cycle index of a Pólya group.
 -- Example usage:
--- > characteristic (sqBoardPolyaGroup 3) "exo"
--- (2(e^4 + o^4 + x^4)^2(e + o + x) + (e^2 + o^2 + x^2)^4(e + o + x) + 4(e^2 + o^2 + x^2)^3(e + o + x)^3 + (e + o + x)^9) / 8
--- > expand $ characteristic (sqBoardPolyaGroup 3) "exo"
--- e^9 + 3e^8o + 3e^8x + 8e^7o^2 + 12e^7ox + 8e^7x^2 + 16e^6o^3 + 38e^6o^2x + 38e^6ox^2 + 16e^6x^3 + 23e^5o^4 + 72e^5o^3x + 108e^5o^2x^2 + 72e^5ox^3 + 23e^5x^4 + 23e^4o^5 + 89e^4o^4x + 174e^4o^3x^2 + 174e^4o^2x^3 + 89e^4ox^4 + 23e^4x^5 + 16e^3o^6 + 72e^3o^5x + 174e^3o^4x^2 + 228e^3o^3x^3 + 174e^3o^2x^4 + 72e^3ox^5 + 16e^3x^6 + 8e^2o^7 + 38e^2o^6x + 108e^2o^5x^2 + 174e^2o^4x^3 + 174e^2o^3x^4 + 108e^2o^2x^5 + 38e^2ox^6 + 8e^2x^7 + 3eo^8 + 12eo^7x + 38eo^6x^2 + 72eo^5x^3 + 89eo^4x^4 + 72eo^3x^5 + 38eo^2x^6 + 12eox^7 + 3ex^8 + o^9 + 3o^8x + 8o^7x^2 + 16o^6x^3 + 23o^5x^4 + 23o^4x^5 + 16o^3x^6 + 8o^2x^7 + 3ox^8 + x^9
--- > expand $ characteristic (graphPolyaGroup 4) ".x"
--- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
-characteristic :: (Eq a, Ord b, Foldable f, Functor f) => PolyaGroup a -> f b -> Polynomial Integer b
-characteristic (PolyaGroup slots symmetries) cs =
+-- > cycleIndex (sqBoardPolyaGroup 3)
+-- (2a[4]^2a[1] + a[2]^4a[1] + 4a[2]^3a[1]^3 + a[1]^9) / 8
+-- > cycleIndex (graphPolyaGroup 4)
+-- (6a[4]a[2] + 8a[3]^2 + 9a[2]^2a[1]^2 + a[1]^6) / 24
+cycleIndex :: Eq a => PolyaGroup a -> Polynomial Integer Cycle
+cycleIndex (PolyaGroup slots symmetries) =
     divPoly (genExpression symmetries) (toInteger $ lengthZeroBasedIndexArray symmetries)
     where
         -- For sqBoardPolyaGroup 3, '(removeSharedOrbits . sort . orbitLengths) symmetry'
@@ -121,7 +135,22 @@ characteristic (PolyaGroup slots symmetries) cs =
                 []   -> []
                 o:os -> o : removeSharedOrbits (drop (o - 1) os)
 
-        -- Generates e.g. e^4 + o^4 + x^4
-        selectOneValue orbitLength = addPoly (fmap (\c -> expPoly (makeVar c) (toInteger orbitLength)) cs)
+        selectOneValue orbitLength = makeVar (Cycle (toInteger orbitLength))
 
         genExpression = addPoly . fmap (multPoly . map selectOneValue . orbitLengths . snd)
+
+-- Returns the characteristic polynomial for a Pólya group and a number of choices represented by distinct variables.
+-- Example usage:
+-- > characteristic (sqBoardPolyaGroup 3) "exo"
+-- (2(e^4 + o^4 + x^4)^2(e + o + x) + (e^2 + o^2 + x^2)^4(e + o + x) + 4(e^2 + o^2 + x^2)^3(e + o + x)^3 + (e + o + x)^9) / 8
+-- > expand $ characteristic (sqBoardPolyaGroup 3) "exo"
+-- e^9 + 3e^8o + 3e^8x + 8e^7o^2 + 12e^7ox + 8e^7x^2 + 16e^6o^3 + 38e^6o^2x + 38e^6ox^2 + 16e^6x^3 + 23e^5o^4 + 72e^5o^3x + 108e^5o^2x^2 + 72e^5ox^3 + 23e^5x^4 + 23e^4o^5 + 89e^4o^4x + 174e^4o^3x^2 + 174e^4o^2x^3 + 89e^4ox^4 + 23e^4x^5 + 16e^3o^6 + 72e^3o^5x + 174e^3o^4x^2 + 228e^3o^3x^3 + 174e^3o^2x^4 + 72e^3ox^5 + 16e^3x^6 + 8e^2o^7 + 38e^2o^6x + 108e^2o^5x^2 + 174e^2o^4x^3 + 174e^2o^3x^4 + 108e^2o^2x^5 + 38e^2ox^6 + 8e^2x^7 + 3eo^8 + 12eo^7x + 38eo^6x^2 + 72eo^5x^3 + 89eo^4x^4 + 72eo^3x^5 + 38eo^2x^6 + 12eox^7 + 3ex^8 + o^9 + 3o^8x + 8o^7x^2 + 16o^6x^3 + 23o^5x^4 + 23o^4x^5 + 16o^3x^6 + 8o^2x^7 + 3ox^8 + x^9
+-- > expand $ characteristic (graphPolyaGroup 4) ".x"
+-- .^6 + .^5x + 2.^4x^2 + 3.^3x^3 + 2.^2x^4 + .x^5 + x^6
+characteristic :: (Eq a, Ord b, Foldable f, Functor f) => PolyaGroup a -> f b -> Polynomial Integer b
+characteristic pg vs = substitute (cycleIndex pg) substituteCycleSize
+    where
+        -- Replaces e.g. a[4] with e^4 + o^4 + x^4.
+        substituteCycleSize (Cycle n) = addPoly $ fmap expVar vs
+            where
+                expVar v = expPoly (makeVar v) n
