@@ -18,6 +18,7 @@ module Eutherion.Polynomial (
        coefficient,
 
        ShowablePolynomialVariable,
+       showVar,
        showPoly,
        showPolynomial
 
