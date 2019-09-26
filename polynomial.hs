@@ -116,7 +116,7 @@ liftVarExpression :: CommutativeRing r => VarExpression r v -> Polynomial r v
 liftVarExpression e = Polynomial (Expr e) r_one
 
 makeVar :: CommutativeRing r => v -> Polynomial r v
-makeVar x = Polynomial (Expr (Var x)) r_one
+makeVar x = liftVarExpression (Var x)
 
 -- (Private)
 makeAddPolyGcd :: CommutativeRing r => r -> [VarExpression r v] -> r -> Polynomial r v
@@ -230,7 +230,7 @@ extractConstantsAndMultOperands = foldl' multConstantsAndOperands (r_one, [], r_
 --   = [12x + 6y + 18] mod 12
 --   = [6y + 6] mod 12
 distributeMultiplier :: (CommutativeRing r, Ord r, Ord v) => r -> r -> [VarExpression r v] -> Polynomial r v
-distributeMultiplier k c es = addPoly (makeConst (c `r_mult` k) : [multPoly [makeConst k, Polynomial (Expr e) r_one] | e <- es])
+distributeMultiplier k c es = addPoly $ makeConst (c `r_mult` k) : [multPoly [makeConst k, liftVarExpression e] | e <- es]
 
 -- Multiplies a list of polynomials to form a new polynomial.
 multPoly :: (CommutativeRing r, Ord r, Ord v, Foldable f) => f (Polynomial r v) -> Polynomial r v
@@ -255,7 +255,7 @@ multPoly ps =
 -- (Private)
 distributeExponent :: (CommutativeRing r, Ord r, Ord v) => r -> [VarExpression r v] -> Integer -> Polynomial r v
 -- Recurse over expPoly because some terms may be Exp expressions.
-distributeExponent k es n = multPoly (makeConst (k `r_exp` n) : [expPoly (Polynomial (Expr e) r_one) n | e <- es])
+distributeExponent k es n = multPoly $ makeConst (k `r_exp` n) : map ((`expPoly` n) . liftVarExpression) es
 
 -- Raises a polynomial to a power.
 expPoly :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> Integer -> Polynomial r v
