@@ -8,8 +8,7 @@ module Eutherion.Polya (
        cayleyTable,
 
        orbit,
-       Cycle,
-       cycleSize,
+       Cycle(..),
        cycleIndex,
        characteristic
 
@@ -95,11 +94,7 @@ cayleyTable (PolyaGroup slots symmetries) =
 orbit :: Eq a => (a -> a) -> a -> [a]
 orbit f x = x : (takeWhile (/= x) $ tail $ iterate f x)
 
-data Cycle = Cycle { cycleSize :: Integer }
-
-instance  Eq Cycle where
-    (==) (Cycle m) (Cycle n) = m == n
-    (/=) (Cycle m) (Cycle n) = m /= n
+data Cycle = Cycle { cycleSize :: Integer } deriving (Eq, Show)
 
 -- Reverse order because polynomials are sorted from largest to smallest contributor.
 instance Ord Cycle where
