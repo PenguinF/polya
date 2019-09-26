@@ -12,7 +12,8 @@ module Eutherion.Utilities (
        findArrayIndex,
        findArrayIndexBy,
        joinList,
-       groupAndSort
+       groupAndSort,
+       mapOneElementEach
 
        ) where
 
@@ -129,3 +130,12 @@ groupAndSort fn cmp (pivot:xs) =
                     LT -> (x:smaller, equal, greater)
                     EQ -> (smaller, x:equal, greater)
                     GT -> (smaller, equal, x:greater)
+
+-- Applies a function on exactly one element of a list successively.
+-- > mapOneElementEach (*10) [1,2,3,4]
+-- [[10,2,3,4],[1,20,3,4],[1,2,30,4],[1,2,3,40]]
+mapOneElementEach :: (a -> a) -> [a] -> [[a]]
+mapOneElementEach = mapOneElementEach' id
+    where
+        mapOneElementEach' _       _ []     = []
+        mapOneElementEach' prepend f (x:xs) = prepend (f x:xs) : mapOneElementEach' (prepend . (x:)) f xs
