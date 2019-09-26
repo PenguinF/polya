@@ -17,6 +17,9 @@ module Eutherion.Polynomial (
        expand,
        coefficient,
 
+       differentiate,
+       differentiateBy,
+
        ShowablePolynomialVariable,
        showVar,
        showPoly,
@@ -559,6 +562,49 @@ coefficient vs = coefficient' (groupAndSort combineGroupedVar groupByVar vs)
                                  in  convertNormSumToPolynomial (c, []) d
                 (vs, Expr e)  -> let (_, products) = expandVarExpression e
                                  in  convertNormSumToPolynomial (r_zero, filter (matchVar vs) products) d
+
+
+
+
+-- Differentation
+
+-- Differentiates a polynomial with respect to a variable.
+-- > addPoly (makeConst 1 : take 10 (map (makeVar 'x' `expPoly`) [1..]))
+-- x^10 + x^9 + x^8 + x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1
+-- > take 12 $ iterate (`differentiate` 'x') $ addPoly (makeConst 1 : take 10 (map (makeVar 'x' `expPoly`) [1..]))
+-- [x^10 + x^9 + x^8 + x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1,
+--  10x^9 + 9x^8 + 8x^7 + 7x^6 + 6x^5 + 5x^4 + 4x^3 + 3x^2 + 2x + 1,
+--  90x^8 + 72x^7 + 56x^6 + 42x^5 + 30x^4 + 20x^3 + 12x^2 + 6x + 2,
+--  720x^7 + 504x^6 + 336x^5 + 210x^4 + 120x^3 + 60x^2 + 24x + 6,
+--  5040x^6 + 3024x^5 + 1680x^4 + 840x^3 + 360x^2 + 120x + 24,
+--  30240x^5 + 15120x^4 + 6720x^3 + 2520x^2 + 720x + 120,
+--  151200x^4 + 60480x^3 + 20160x^2 + 5040x + 720,
+--  604800x^3 + 181440x^2 + 40320x + 5040,
+--  1814400x^2 + 362880x + 40320,
+--  3628800x + 362880,
+--  3628800,
+--  0]
+differentiate  :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> v -> Polynomial r v
+differentiate p v = differentiateBy p (==v)
+
+differentiateBy :: (CommutativeRing r, Ord r, Ord v) => Polynomial r v -> (v -> Bool) -> Polynomial r v
+differentiateBy (Polynomial p d) vPredicate =
+    case p of
+        Const c -> polyZero
+        Expr e  -> divPoly (differentiateBy' e) d
+    where
+        differentiateBy' e =
+            case e of
+                Var x     -> if vPredicate x then makeConst r_one else polyZero
+
+                -- Apply chain rule for x^n: (x^n)' -> n(x^n-1) * x'
+                Exp t n   -> multPoly [makeConst (r_ones n), expPoly (liftVarExpression t) (n-1), differentiateBy' t]
+
+                -- Apply product rule: (xyz)' -> x'yz + xy'z + xyz'
+                Mult c ts -> multPoly [makeConst c, addPoly (map multPoly $ mapOneElementEach (`differentiateBy` vPredicate) $ map liftVarExpression ts)]
+
+                -- Ignore constant, differentiate all terms: (x + y)' -> x' + y'
+                Add _ ts  -> addPoly $ fmap differentiateBy' ts
 
 
 
