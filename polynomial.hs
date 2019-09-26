@@ -111,6 +111,10 @@ makeRational c d
     | otherwise   = let (c', d') = r_div_by_gcd c d
                     in  makePoly (Const c') d'
 
+-- (Private)
+liftVarExpression :: CommutativeRing r => VarExpression r v -> Polynomial r v
+liftVarExpression e = Polynomial (Expr e) r_one
+
 makeVar :: CommutativeRing r => v -> Polynomial r v
 makeVar x = Polynomial (Expr (Var x)) r_one
 
